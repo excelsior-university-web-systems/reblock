@@ -1,0 +1,25 @@
+{
+  "apiVersion": 3,
+  "name": "reblock/reblock-block-selector",
+  "title": "ReBlock",
+  "description": "Insert reusable block content.",
+  "version": "1.0.0",
+  "category": "reblock-blocks",
+  "supports": {
+    "html": false,
+    "multiple": true,
+    "inserter": true
+  },
+  "attributes": {
+    "blockId": {
+      "type": "number",
+      "default": 0
+    },
+    "isBootstrap": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.css"
+}
