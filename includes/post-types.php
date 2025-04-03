@@ -1,9 +1,6 @@
 <?php
 namespace eslin87\ReBlock;
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\JWK;
-
 if ( !defined( 'ABSPATH' ) ) { exit; }
 
 /**
@@ -19,7 +16,7 @@ function create_reblock_post_type() {
 
     $args = array(
         'labels'                    => array(
-            'name'                  =>  REBLOCK_POST_TYPE_NAME,
+            'name'                  =>  REBLOCK_PLUGIN_NAME,
             'singular_name'         =>  REBLOCK_PLUGIN_NAME,
             'add_new'               => 'Add New ' . REBLOCK_PLUGIN_NAME,
             'add_new_item'          => 'Add New ' . REBLOCK_PLUGIN_NAME,
