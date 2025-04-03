@@ -14,7 +14,7 @@
     "lint:pkg-json": "wp-scripts lint-pkg-json",
     "packages-update": "wp-scripts packages-update",
     "bash-post-zip": "bash postprocess_zip.sh",
-    "ps1-post-zip": "postprocess_zip.ps1",
+    "ps1-post-zip": "powershell ./postprocess_zip.ps1",
     "bash-plugin-zip": "wp-scripts plugin-zip && npm run bash-post-zip",
     "ps1-plugin-zip": "wp-scripts plugin-zip && npm run ps1-post-zip",
     "start": "wp-scripts start",
