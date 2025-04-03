@@ -9,9 +9,6 @@
             "email": "ethan.lin.05@gmail.com"
         }
     ],
-    "require": {
-        "firebase/php-jwt": "^6.11"
-    },
     "autoload": {
         "psr-4": {
             "eslin87\\ReBlock\\": ["includes/"]
