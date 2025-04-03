@@ -1,0 +1,23 @@
+{
+    "name": "eslin87/reblock",
+    "description": "A WordPress plugin that manages reusable content blocks.",
+    "license": "GPL-2.0-or-later",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Ethan Lin",
+            "email": "ethan.lin.05@gmail.com"
+        }
+    ],
+    "require": {
+        "firebase/php-jwt": "^6.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "eslin87\\ReBlock\\": ["includes/"]
+        }
+    },
+    "scripts": {
+        "npm-build": "npm run build"
+    }
+}

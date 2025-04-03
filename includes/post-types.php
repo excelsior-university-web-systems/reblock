@@ -1,0 +1,237 @@
+<?php
+namespace eslin87\ReBlock;
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+
+if ( !defined( 'ABSPATH' ) ) { exit; }
+
+/**
+ * Registers the custom post type "ReBlock".
+ *
+ * - Defines UI labels, capabilities, support features, and visibility settings.
+ * - Assigns all post type capabilities to the administrator role.
+ * - Enables block editor, revisions, and REST API support.
+ *
+ * @return void Registers the custom post type and assigns capabilities.
+ */
+function create_reblock_post_type() {
+
+    $args = array(
+        'labels'                    => array(
+            'name'                  =>  REBLOCK_POST_TYPE_NAME,
+            'singular_name'         =>  REBLOCK_PLUGIN_NAME,
+            'add_new'               => 'Add New ' . REBLOCK_PLUGIN_NAME,
+            'add_new_item'          => 'Add New ' . REBLOCK_PLUGIN_NAME,
+            'edit_item'             => 'Edit ' . REBLOCK_PLUGIN_NAME,
+            'new_item'              => 'New ' . REBLOCK_PLUGIN_NAME,
+            'view_item'             => 'View ' . REBLOCK_PLUGIN_NAME,
+            'view_items'            => 'View ' . REBLOCK_PLUGIN_NAME,
+            'search_items'          => 'Search ' . REBLOCK_PLUGIN_NAME,
+            'not_found'             => 'No ' . REBLOCK_PLUGIN_NAME .' found',
+            'not_found_in_trash'    => 'No ' . REBLOCK_PLUGIN_NAME .' found in trash',
+            'all_items'             => 'All ' . REBLOCK_PLUGIN_NAME,
+            'insert_into_item'      => 'Insert into ' . REBLOCK_PLUGIN_NAME,
+            'uploaded_to_this_item' => 'Uploaded to this ' . REBLOCK_PLUGIN_NAME,
+            'attributes'            =>  REBLOCK_PLUGIN_NAME . ' Attributes',
+            'filter_items_list'     => 'Filter '. REBLOCK_PLUGIN_NAME .' list',
+            'items_list'            =>  REBLOCK_PLUGIN_NAME . ' list',
+            'item_published'        =>  REBLOCK_PLUGIN_NAME .' published',
+            'item_updated'          =>  REBLOCK_PLUGIN_NAME . ' updated',
+            'item_trashed'          =>  REBLOCK_PLUGIN_NAME . ' trashed'
+        ),
+        'public'              => true,
+        'show_ui'             => true,
+        'show_in_menu'        => true,
+        'map_meta_cap'        => true,
+        'capability_type'     => REBLOCK_POST_TYPE_NAME,
+        'supports'            => array( 'title', 'editor', 'revisions', 'custom-fields' ),
+        'has_archive'         => false,
+        'exclude_from_search' => true,
+        'publicly_queryable'  => true,
+        'show_in_nav_menus'   => false,
+        'show_in_admin_bar'   => true,
+        'show_in_rest'        => true,
+        'menu_icon'           => 'dashicons-layout',
+        'delete_with_user'    => false
+    );
+
+    register_post_type( REBLOCK_POST_TYPE_NAME, $args );
+
+    // Retrieve capabilities for the custom post type
+    $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
+    $capabilities = $post_type_object->cap;
+
+    // Assign capabilities to administrator
+    $role = get_role( 'administrator' );
+    foreach ( $capabilities as $cap ) {
+        $role->add_cap( $cap );
+    }
+
+}
+
+/**
+ * Initializes ReBlock by registering custom post types.
+ *
+ * - Registers "ReBlock" and "ReBlock Blocks" post types.
+ * - Flushes rewrite rules to ensure proper permalink handling.
+ * - Hooks into the WordPress 'init' action.
+ *
+ * @return void
+ */
+function reblock_initialize() {
+    create_reblock_post_type();
+    flush_rewrite_rules();
+}
+
+add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
+
+/**
+ * Loads a custom blank template for ReBlock single posts.
+ *
+ * - Applies only to singular posts of type ReBlock.
+ * - Falls back to the default template if the custom one is not found.
+ *
+ * @param string $template The path to the default single post template.
+ * @return string The path to the custom or default template.
+ */
+function reblock_blank_single_template() {
+    if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
+        $plugin_template = plugin_dir_path( __FILE__ ) . 'templates/blank.php';
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    
+    return $template;
+}
+
+add_filter( 'single_template', __NAMESPACE__.'\\reblock_blank_single_template', 11 );
+
+/**
+ * Removes all styles and scripts except allowed ones on ReBlock pages.
+ *
+ * - Applies to both single and archive pages of ReBlock post type.
+ * - Hides the admin bar and only enqueues essential frontend assets.
+ * - Prevents unwanted theme or plugin styles/scripts from loading.
+ *
+ * @return void
+ */
+function reblock_remove_all_styles_and_scripts() {
+
+	if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
+		
+		global $wp_styles, $wp_scripts;
+		
+		add_filter( 'show_admin_bar', '__return_false' );
+		
+		$allowedStyles = array( 'excelsior-bootstrap-editor-frontend-style' );
+		$allowedScripts = array( 'excelsior-bootstrap-editor-frontend-script' );
+
+		// Remove all styles
+		foreach( $wp_styles->queue as $style ) {
+			
+			if ( in_array( $style, $allowedStyles ) ) {
+				continue;
+			}
+			
+			wp_dequeue_style( $style );
+			wp_deregister_style( $style );
+			
+		}
+
+		// Remove all scripts
+		foreach( $wp_scripts->queue as $script ) {
+			
+			if ( in_array( $script, $allowedScripts ) ) {
+				continue;
+			}
+			
+			wp_dequeue_script( $script );
+			wp_deregister_script( $script );
+			
+		}
+		
+	}
+	
+}
+
+add_action( 'wp_enqueue_scripts', __NAMESPACE__.'\\reblock_remove_all_styles_and_scripts', 99 );
+
+/**
+ * Generates a hashed slug for ReBlock posts.
+ *
+ * - Applies only to posts of type `REBLOCK_POST_TYPE_NAME`.
+ * - Creates a unique slug by hashing the post title and ID.
+ * - Modifies the `post_name` field before inserting or updating the post.
+ *
+ * @param array $data The sanitized post data.
+ * @param array $postarr The raw post data.
+ * @return array The modified post data with a hashed slug.
+ */
+function reblock_hash_slug( $data, $postarr ) {
+    if ( $data['post_type'] == REBLOCK_POST_TYPE_NAME ) {
+        $title_hash = md5( 'ccb-reblock-' . $postarr['ID'] );
+        $data['post_name'] = $title_hash;
+    }
+    return $data;
+}
+
+add_filter( 'wp_insert_post_data', __NAMESPACE__.'\\reblock_hash_slug', 10, 2 );
+
+/**
+ * Modifies the document title by removing site name and tagline for ReBlock pages.
+ *
+ * - Applies to single and archive pages of ReBlock post type.
+ * - Cleans up the title for a more minimal presentation.
+ *
+ * @param array $title_parts The original parts of the document title.
+ * @return array The modified title parts.
+ */
+function reblock_document_title_parts( $title_parts ) {
+    if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
+        if ( isset( $title_parts['site'] ) ) {
+            unset( $title_parts['site'] );
+        }
+        if ( isset( $title_parts['tagline'] ) ) {
+            unset( $title_parts['tagline'] );
+        }
+        }
+    return $title_parts;
+}
+
+add_filter( 'document_title_parts', __NAMESPACE__.'\\reblock_document_title_parts' );
+
+/**
+ * Disables the slug field in Quick Edit for ReBlock posts.
+ *
+ * - Targets posts of type ReBlock.
+ * - Uses JavaScript to disable the slug input field when Quick Edit is opened.
+ *
+ * @return void Outputs inline JavaScript to modify Quick Edit behavior.
+ */
+function reblock_disable_slug_in_quick_edit() {
+    if ( get_post_type() == REBLOCK_POST_TYPE_NAME ) {
+        ?>
+        <script type="text/javascript" id="ccb-reblock-disable-slug">
+            document.addEventListener( 'DOMContentLoaded', function () {
+                // Listen for clicks on the Quick Edit button
+                document.querySelectorAll( 'button.editinline' ).forEach( function( editButton ) {
+                    editButton.addEventListener( 'click', function() {
+                        // Delay to ensure the Quick Edit form is loaded
+                        setTimeout(function() {
+                            const slugField = document.querySelector( 'input[name=post_name]' );
+                            if ( slugField ) {
+                                slugField.disabled = true; // Disable the slug field
+                            }
+                        }, 100);
+                    } );
+                } );
+            } );
+        </script>
+        <?php
+    }
+}
+
+add_action( 'admin_footer', __NAMESPACE__.'\\reblock_disable_slug_in_quick_edit' );
+?>
