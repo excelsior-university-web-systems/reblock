@@ -23,7 +23,13 @@
     "test:e2e": "wp-scripts test-e2e",
     "test:unit": "wp-scripts test-unit-js"
   },
-  "files": [ "vendor/**", "includes/**", "build/**", "reblock.php" ],
+  "files": [
+    "vendor/**",
+    "includes/**",
+    "admin/**",
+    "build/**",
+    "reblock.php"
+  ],
   "keywords": [],
   "author": "",
   "license": "GPLv3",
@@ -33,5 +39,8 @@
     "grunt-sass": "^4.0.0",
     "grunt-wp-readme-to-markdown": "^2.1.0",
     "sass": "^1.86.0"
+  },
+  "dependencies": {
+    "@wordpress/icons": "^10.21.0"
   }
 }
