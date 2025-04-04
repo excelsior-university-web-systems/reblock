@@ -8,12 +8,18 @@
   "supports": {
     "html": false,
     "multiple": true,
-    "inserter": true
+    "inserter": true,
+    "reusable": false,
+    "transform": false
   },
   "attributes": {
     "blockId": {
       "type": "number",
       "default": 0
+    },
+    "blockTitle": {
+      "type": "string",
+      "default": ""
     },
     "isBootstrap": {
       "type": "boolean",
