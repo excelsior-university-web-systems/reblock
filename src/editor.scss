@@ -1,3 +1,7 @@
+:root {
+    --reblock-theme-color: #77008d;
+}
+
 .post-type-reblock {
 
     .components-notice {
@@ -18,7 +22,7 @@
 
 .wp-block-reblock-reblock-block-selector {
 
-    &.reblock-preview {
+    .reblock-select {
 
         border: 1px solid #f2f2f2;
         padding: 1em 1em 0;
@@ -28,6 +32,10 @@
         }
     }
 
+    &::after {
+        outline-color: var(--reblock-theme-color) !important;
+    }
+
     .components-combobox-control {
 
         ul {
@@ -35,23 +43,6 @@
             margin: 0 !important;
         }
 
-    }
-
-    .label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        top: -24px;
-        right: 0;
-        padding: 0 .3em;
-        font-size: .75em;
-        color: #686868;
-        font-weight: bold;
-        border-radius: 6px 6px 0 0;
-        line-height: 1;
-        background-color: #f2f2f2;
-        user-select: none;
     }
 
     .loading-message {
@@ -65,85 +56,25 @@
     }
 
     .loader {
-
-        width: 48px;
-        height: 48px;
+        width: 24px;
+        height: 24px;
         display: inline-block;
         position: relative;
-        transform: rotate(45deg);
-        margin-bottom: 1.25em;
-
-        &::before {
-            content: '';
-            box-sizing: border-box;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            left: 0;
-            top: -24px;
-            animation: animloader 4s ease infinite;
-        }
-
-        &::after {
-            content: '';
-            box-sizing: border-box;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 24px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.85);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-            animation: animloader2 2s ease infinite;
-        }
-
+        background: url("../admin/images/reblock-purple-icon.svg") no-repeat;
+        box-sizing: border-box;
+        animation: flipX 1.5s linear infinite;
+        margin-bottom: 1em;
     }
-
-    @keyframes animloader {
+      
+    @keyframes flipX {
         0% {
-            box-shadow: 0 24px #ffffff00, 24px 24px #ffffff00, 24px 48px #ffffff00, 0px 48px #ffffff00;
-        }
-        12% {
-        box-shadow: 0 24px #ccc, 24px 24px #ffffff00, 24px 48px #ffffff00, 0px 48px #ffffff00;
-        }
-        25% {
-            box-shadow: 0 24px #ccc, 24px 24px #ccc, 24px 48px #ffffff00, 0px 48px #ffffff00;
-        }
-        37% {
-            box-shadow: 0 24px #ccc, 24px 24px #ccc, 24px 48px #ccc, 0px 48px #ffffff00;
+            transform: perspective(200px) rotateX(0deg) rotateY(0deg);
         }
         50% {
-            box-shadow: 0 24px #ccc, 24px 24px #ccc, 24px 48px #ccc, 0px 48px #ccc;
-        }
-        62% {
-            box-shadow: 0 24px #ffffff00, 24px 24px #ccc, 24px 48px #ccc, 0px 48px #ccc;
-        }
-        75% {
-            box-shadow: 0 24px #ffffff00, 24px 24px #ffffff00, 24px 48px #ccc, 0px 48px #ccc;
-        }
-        87% {
-            box-shadow: 0 24px #ffffff00, 24px 24px #ffffff00, 24px 48px #ffffff00, 0px 48px #ccc;
+            transform: perspective(200px) rotateX(-180deg) rotateY(0deg);
         }
         100% {
-            box-shadow: 0 24px #ffffff00, 24px 24px #ffffff00, 24px 48px #ffffff00, 0px 48px #ffffff00;
-        }
-    }
-
-    @keyframes animloader2 {
-        0% {
-            transform: translate(0, 0) rotateX(0) rotateY(0);
-        }
-        25% {
-            transform: translate(100%, 0) rotateX(0) rotateY(180deg);
-        }
-        50% {
-            transform: translate(100%, 100%) rotateX(-180deg) rotateY(180deg);
-        }
-        75% {
-            transform: translate(0, 100%) rotateX(-180deg) rotateY(360deg);
-        }
-        100% {
-            transform: translate(0, 0) rotateX(0) rotateY(360deg);
+            transform: perspective(200px) rotateX(-180deg) rotateY(-180deg);
         }
     }
 }
