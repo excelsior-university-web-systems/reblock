@@ -12,8 +12,10 @@ if ( !defined( 'ABSPATH' ) ) { exit; }
 
 define( 'REBLOCK_PLUGIN_NAME', 'ReBlock' );
 define( 'REBLOCK_POST_TYPE_NAME', 'reblock' );
+define( 'EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT', is_plugin_active( 'excelsior-bootstrap-editor/excelsior-bootstrap-editor.php' ) );
 
 require_once __DIR__ . '/vendor/autoload.php';
 
 require_once __DIR__ . '/includes/post-types.php';
 require_once __DIR__ . '/includes/block.php';
+require_once __DIR__ . '/includes/options.php';

@@ -50,8 +50,14 @@ function create_reblock_post_type() {
         'show_in_admin_bar'   => true,
         'show_in_rest'        => true,
         'menu_icon'           => 'data:image/svg+xml;base64,' . base64_encode('<svg id="a" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 36 36"><path d="M28,0H4C1.79,0,0,1.79,0,4v24c0,2.21,1.79,4,4,4h24c2.21,0,4-1.79,4-4V4c0-2.21-1.79-4-4-4ZM17.11,26.84s-.04,0-.06,0c-5.99.57-11.31-3.82-11.88-9.81-.25-2.6.45-5.21,1.96-7.34l-1.99-1.99c-.07-.08-.12-.17-.13-.28-.02-.25.16-.47.41-.49l5.55-.51s.05,0,.08,0c.25.02.43.24.41.49l-.51,5.55c0,.11-.06.2-.13.28-.18.18-.46.18-.64,0l-1.75-1.75c-2.76,4.19-1.61,9.82,2.58,12.58,1.73,1.14,3.8,1.66,5.86,1.46.5-.06.95.29,1.02.78.06.5-.29.95-.78,1.02ZM26.88,24.94c-.08.08-.17.12-.28.13l-5.55.51c-.25.02-.47-.16-.49-.41,0-.03,0-.05,0-.08l.51-5.55c.02-.25.24-.43.49-.41.11,0,.2.06.28.13l1.74,1.74c2.32-3.59,1.89-8.38-1.14-11.41-1.99-1.99-4.68-2.87-7.28-2.62-.5.06-.95-.29-1.02-.78-.06-.5.29-.95.78-1.02.02,0,.04,0,.06,0,5.99-.57,11.31,3.82,11.88,9.81.25,2.57-.5,5.21-1.98,7.33l2,2c.18.18.18.46,0,.64Z" fill="black"/></svg>'),
-        'delete_with_user'    => false
+        'delete_with_user'    => false,
+        "template"
     );
+
+    if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT && get_option( 'reblock_start_with_excelsior_bootstrap', false ) ) {
+        $args['template'] = array( array( 'excelsior-bootstrap-editor/namespace' ) );
+        $args['template_lock'] = 'insert';
+    }
 
     register_post_type( REBLOCK_POST_TYPE_NAME, $args );
 
@@ -92,7 +98,7 @@ add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
  * @param string $template The path to the default single post template.
  * @return string The path to the custom or default template.
  */
-function reblock_blank_single_template() {
+function reblock_blank_single_template( $template ) {
     if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
         $plugin_template = plugin_dir_path( __FILE__ ) . 'templates/blank.php';
         if ( file_exists( $plugin_template ) ) {
@@ -121,9 +127,15 @@ function reblock_remove_all_styles_and_scripts() {
 		global $wp_styles, $wp_scripts;
 		
 		add_filter( 'show_admin_bar', '__return_false' );
+
+        $allowedStyles = array();
+		$allowedScripts = array();
 		
-		$allowedStyles = array( 'excelsior-bootstrap-editor-frontend-style' );
-		$allowedScripts = array( 'excelsior-bootstrap-editor-frontend-script' );
+        // retain Excelsior Bootstrap framework if Excelsior Bootstrap Editor is active
+        if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
+            array_push( $allowedStyles, 'excelsior-bootstrap-editor-frontend-style' );
+            array_push( $allowedScripts, 'excelsior-bootstrap-editor-frontend-script' );
+        }
 
 		// Remove all styles
 		foreach( $wp_styles->queue as $style ) {
@@ -168,7 +180,7 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__.'\\reblock_remove_all_styles_and
  */
 function reblock_hash_slug( $data, $postarr ) {
     if ( $data['post_type'] == REBLOCK_POST_TYPE_NAME ) {
-        $title_hash = md5( 'ccb-reblock-' . $postarr['ID'] );
+        $title_hash = md5( 'reblock/' . $postarr['ID'] );
         $data['post_name'] = $title_hash;
     }
     return $data;
@@ -210,7 +222,7 @@ add_filter( 'document_title_parts', __NAMESPACE__.'\\reblock_document_title_part
 function reblock_disable_slug_in_quick_edit() {
     if ( get_post_type() == REBLOCK_POST_TYPE_NAME ) {
         ?>
-        <script type="text/javascript" id="ccb-reblock-disable-slug">
+        <script type="text/javascript" id="reblock-disable-slug">
             document.addEventListener( 'DOMContentLoaded', function () {
                 // Listen for clicks on the Quick Edit button
                 document.querySelectorAll( 'button.editinline' ).forEach( function( editButton ) {
