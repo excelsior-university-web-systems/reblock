@@ -21,7 +21,7 @@
             "type": "string",
             "default": ""
         },
-        "isBootstrap": {
+        "hasExcelsiorBootstrap": {
             "type": "boolean",
             "default": false
         }

@@ -8,7 +8,7 @@ import { pencil, update } from '@wordpress/icons';
 
 export default function edit( { attributes, setAttributes, clientId } ) {
 
-	const { blockId, blockTitle, isBootstrap, metadata } = attributes;
+	const { blockId, blockTitle, hasExcelsiorBootstrap, metadata } = attributes;
 
     const blockProps = useBlockProps({});
 
@@ -20,7 +20,8 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const [ searchQuery, setSearchQuery ] = useState('');
     const dynamicBlockId = `${blockId}-${refreshKey}`;
 
-    const isBootstrapContainer = useSelect( ( select ) => {
+    // check for Excelsior Bootstrap Editor support
+    const hasExcelsiorBootstrapNamespace = useSelect( ( select ) => {
         const { getBlockParents, getBlock } = select( 'core/block-editor' );
         const parentBlocks = getBlockParents( clientId );
     
@@ -33,7 +34,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const fetchPosts = debounce( ( query ) => {
 
         const currentPostType = wp.data.select('core/editor').getCurrentPostType();
-        let searchPath = `/wp/v2/reblock?search=${query}&per_page=10`;
+        let searchPath = `/wp/v2/reblock?search=${query}&per_page=10&status=publish`;
 
         if ( currentPostType == 'reblock' ) {
             const currentPostId = wp.data.select('core/editor').getCurrentPostId();
@@ -65,15 +66,24 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             apiFetch( { path: `/wp/v2/reblock/${blockId}` } )
                 .then( ( postData ) => {
                     const content = checkForBootstrap( postData.content.rendered );
+                    const postStatus = postData.status;
+
+                    if ( postStatus != 'publish' ) {
+                        setError( `The requested ReBlock (ID: ${blockId}) could not be found. Please ensure that it exists and has been published.` );
+                        return;
+                    }
+
                     postData.content.rendered = content;
                     setPost( postData );
 
                     if ( !metadata ) {
+
                         setAttributes( {
                             metadata: {
                                 name: postData.title.rendered
                             }
                         } );
+
                     } else {
 
                         if ( metadata.name && ( metadata.name != postData.title.rendered ) ) {
@@ -86,7 +96,9 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                         }
                         
                     }
+
                     setError( null );
+                    
                 } )
                 .catch( ( error ) => {
                     setPost( null );
@@ -124,7 +136,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
 
     const checkForBootstrap = ( content ) => {
 
-        if ( isBootstrapContainer ) {
+        if ( hasExcelsiorBootstrapNamespace ) {
 
             const parser = new DOMParser();
             const doc = parser.parseFromString( content, 'text/html' );
@@ -142,8 +154,8 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     
                     pageContainer.remove();
 
-                    if ( !isBootstrap ) {
-                        setAttributes( { isBootstrap: true } );
+                    if ( !hasExcelsiorBootstrap ) {
+                        setAttributes( { hasExcelsiorBootstrap: true } );
                     }
     
                 }
@@ -155,8 +167,8 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             
         }
 
-        if ( isBootstrap ) {
-            setAttributes( { isBootstrap: false } );
+        if ( hasExcelsiorBootstrap ) {
+            setAttributes( { hasExcelsiorBootstrap: false } );
         }
 
         return content;
@@ -169,7 +181,9 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             <BlockControls>
                 <ToolbarGroup>
                         <ToolbarButton
-                        variant='tertiary'
+                            className='reblock-disabled-btn-title'
+                            description={'A ReBlock content ' + ( post ? ' from ' + post.title.rendered : '') }
+                            variant='tertiary'
                             __next40pxDefaultSize
                             text={post ? post.title.rendered : 'ReBlock' }
                             disabled={ true }
@@ -240,7 +254,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                     />
                     </div>
                 ) : (
-                    <div className='loading-message'><span class="loader"></span> Loading content...</div>
+                    <div className='loading-message'><span class="loader"></span> Loading...</div>
                 )
                 
             ) }
