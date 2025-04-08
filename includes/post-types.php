@@ -112,105 +112,87 @@ function reblock_blank_single_template( $template ) {
 add_filter( 'single_template', __NAMESPACE__.'\\reblock_blank_single_template', 11 );
 
 /**
- * Removes all styles and scripts except allowed ones on ReBlock pages.
+ * Removes all enqueued styles and scripts on ReBlock pages except for allowed ones.
  *
- * - Applies to both single and archive pages of ReBlock post type.
- * - Hides the admin bar and only enqueues essential frontend assets.
- * - Prevents unwanted theme or plugin styles/scripts from loading.
+ * - Applies only to singular pages of ReBlock post type.
+ * - Respects user-defined allowed handles via the 'reblock_allowed_styles_scripts' option.
+ * - Honors options for admin bar visibility and global styles.
+ * - Retains Excelsior Bootstrap assets if supported.
  *
  * @return void
  */
 function reblock_remove_all_styles_and_scripts() {
+    if ( !is_singular( REBLOCK_POST_TYPE_NAME ) ) {
+        return;
+    }
 
-	if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
-		
-		global $wp_styles, $wp_scripts;
+    global $wp_styles, $wp_scripts;
 
-        $allowed_styles = array();
-		$allowed_scripts = array();
+    $required = [];
 
-        if ( !get_option( 'reblock_show_wp_admin_bar', true ) ) {
-            add_filter( 'show_admin_bar', '__return_false' );
-            wp_dequeue_style( 'admin-bar' );
-            wp_deregister_style( 'admin-bar' );
+    // Disable admin bar if option is false
+    if ( !get_option( 'reblock_show_wp_admin_bar', true ) ) {
+        add_filter( 'show_admin_bar', '__return_false' );
+        wp_dequeue_style( 'admin-bar' );
+        wp_deregister_style( 'admin-bar' );
+    }
+
+    // Retain 'global-styles' if global styles are allowed
+    if ( get_option( 'reblock_allow_global_styles', true ) ) {
+        $required[] = 'global-styles';
+    }
+
+    // Retain Excelsior Bootstrap framework if supported
+    if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
+        $required[] = 'excelsior-bootstrap-editor-frontend';
+    }
+
+    $allowed_option = get_option( 'reblock_allowed_styles_scripts', '*' );
+
+    if ( $allowed_option === '*' ) {
+        return;
+    }
+
+    $allowed = array_map( 'trim', explode( ',', $allowed_option ) );
+    $combined = array_unique( array_merge( $required, $allowed ) );
+
+    // Ensure admin-bar is preserved if admin bar is enabled
+    if ( get_option( 'reblock_show_wp_admin_bar', true ) && !in_array( 'admin-bar', $combined, true ) ) {
+        $combined[] = 'admin-bar';
+    }
+
+    // Ensure global-styles is removed if global styles are disabled
+    if ( !get_option( 'reblock_allow_global_styles', true ) && in_array( 'global-styles', $combined, true ) ) {
+        $global_styles_key = array_search( 'global-styles', $combined );
+        unset( $combined[$global_styles_key] );
+    }
+
+    foreach ( $wp_styles->queue as $style ) {
+        if ( !in_array( $style, $combined, true ) ) {
+            wp_dequeue_style( $style );
+            wp_deregister_style( $style );
         }
-		
-        // retain Excelsior Bootstrap framework if Excelsior Bootstrap Editor is active
-        if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
-            array_push( $allowed_styles, 'excelsior-bootstrap-editor-frontend-style' );
-            array_push( $allowed_scripts, 'excelsior-bootstrap-editor-frontend-script' );
+    }
+
+    foreach ( $wp_scripts->queue as $script ) {
+        if ( !in_array( $script, $combined, true ) ) {
+            wp_dequeue_script( $script );
+            wp_deregister_script( $script );
         }
-
-        $user_allowed_styles_settings = get_option( 'reblock_allowed_styles', '*' );
-        $user_allowed_scripts_settings = get_option( 'reblock_allowed_scripts', '*' );
-
-        if ( $user_allowed_styles_settings !== '*' ) {
-
-            $user_allowed_styles = explode( ',', $user_allowed_styles_settings );
-            $combined_styles = array_merge( $allowed_styles, $user_allowed_styles );
-
-            if ( get_option( 'reblock_show_wp_admin_bar', true ) ) {
-                if ( !in_array( 'admin-bar', $combined_styles ) ) {
-                    array_push( $combined_styles, 'admin-bar' );
-                }
-            }
-
-            foreach( $wp_styles->queue as $style ) {
-			
-                if ( in_array( $style, $combined_styles ) ) {
-                    continue;
-                }
-                
-                wp_dequeue_style( $style );
-                wp_deregister_style( $style );
-                
-            }
-
-        }
-		
-        if ( $user_allowed_scripts_settings !== '*' ) {
-
-            $user_allowed_scripts = explode( ',', $user_allowed_scripts_settings );
-            $combined_scripts = array_merge( $allowed_scripts, $user_allowed_scripts );
-
-            if ( get_option( 'reblock_show_wp_admin_bar', true ) ) {
-                if ( !in_array( 'admin-bar', $combined_scripts ) ) {
-                    array_push( $combined_scripts, 'admin-bar' );
-                }
-            }
-
-            foreach( $wp_scripts->queue as $script ) {
-			
-                if ( in_array( $script, $combined_scripts ) ) {
-                    continue;
-                }
-                
-                wp_dequeue_script( $script );
-                wp_deregister_script( $script );
-                
-            }
-
-        }
-		
-	}
-	
+    }
 }
 
 add_action( 'wp_enqueue_scripts', __NAMESPACE__.'\\reblock_remove_all_styles_and_scripts', 99 );
 
 /**
- * Generates a hashed slug for ReBlock posts.
+ * Generates a hashed slug for ReBlock posts if slug hashing is enabled.
  *
- * - Applies only to posts of type `REBLOCK_POST_TYPE_NAME`.
- * - Creates a unique slug by hashing the post title and ID.
- * - Modifies the `post_name` field before inserting or updating the post.
- *
- * @param array $data The sanitized post data.
- * @param array $postarr The raw post data.
- * @return array The modified post data with a hashed slug.
+ * @param array $data    Sanitized post data.
+ * @param array $postarr Raw post data.
+ * @return array Modified post data with hashed slug if applicable.
  */
 function reblock_hash_slug( $data, $postarr ) {
-    if ( $data['post_type'] == REBLOCK_POST_TYPE_NAME ) {
+    if ( $data['post_type'] == REBLOCK_POST_TYPE_NAME && get_option( 'reblock_hash_slug_option', false ) ) {
         $title_hash = md5( 'reblock/' . $postarr['ID'] );
         $data['post_name'] = $title_hash;
     }
@@ -251,7 +233,7 @@ add_filter( 'document_title_parts', __NAMESPACE__.'\\reblock_document_title_part
  * @return void Outputs inline JavaScript to modify Quick Edit behavior.
  */
 function reblock_disable_slug_in_quick_edit() {
-    if ( get_post_type() == REBLOCK_POST_TYPE_NAME ) {
+    if ( get_post_type() == REBLOCK_POST_TYPE_NAME && get_option( 'reblock_hash_slug_option', false ) ) {
         ?>
         <script type="text/javascript" id="reblock-disable-slug">
             document.addEventListener( 'DOMContentLoaded', function () {
