@@ -62,25 +62,45 @@ function reblock_register_settings() {
 
         /*** Styles and JavaScript ***/
 
-        register_setting( 'reblock_settings_group', 'reblock_allowed_styles', $args = array(
-			'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_styles'
+        register_setting( 'reblock_settings_group', 'reblock_show_wp_admin_bar' );
+
+        register_setting( 'reblock_settings_group', 'reblock_allowed_styles', array(
+			'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_styles_scripts'
 		) );
 
-        // Add Excelsior Bootstrap Editor Section
+        register_setting( 'reblock_settings_group', 'reblock_allowed_scripts', array(
+			'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_styles_scripts'
+		) );
+
         add_settings_section(
-            'reblock_styles_scripts', // Section ID
-            __( 'Styles and Javascript Files', 'reblock' ), // Title for the section
-            __NAMESPACE__.'\\reblock_styles_scripts_section', // Callback function for section description
-            'reblock_settings' // Page on which to add this section
+            'reblock_styles_scripts',
+            __( 'Styles and Scripts', 'reblock' ),
+            __NAMESPACE__.'\\reblock_styles_scripts_section',
+            'reblock_settings'
         );
 
-        // Add Excelsior Bootstrap Editor Checkbox
         add_settings_field(
-            'reblock_allowed_styles', // Field ID
-            __( 'Styles', 'reblock' ), // Field title/label
-            __NAMESPACE__.'\\reblock_allowed_styles', // Callback function to render the field
-            'reblock_settings', // Page on which to add this field
-            'reblock_styles_scripts' // Section in which to add the field
+            'reblock_show_wp_admin_bar',
+            __( 'Admin Bar', 'reblock' ),
+            __NAMESPACE__.'\\reblock_show_wp_admin_bar',
+            'reblock_settings',
+            'reblock_styles_scripts'
+        );
+
+        add_settings_field(
+            'reblock_allowed_styles',
+            __( 'Styles', 'reblock' ),
+            __NAMESPACE__.'\\reblock_allowed_styles',
+            'reblock_settings',
+            'reblock_styles_scripts'
+        );
+
+        add_settings_field(
+            'reblock_allowed_scripts',
+            __( 'Scripts', 'reblock' ),
+            __NAMESPACE__.'\\reblock_allowed_scripts',
+            'reblock_settings',
+            'reblock_styles_scripts'
         );
 
     }
@@ -99,34 +119,48 @@ function reblock_start_with_excelsior_bootstrap() {
     $option = get_option( 'reblock_start_with_excelsior_bootstrap', false );
     ?>
     <input type="checkbox" name="reblock_start_with_excelsior_bootstrap" value="1" <?php checked( 1, $option, true ); ?> />
-    <label for="reblock_checkbox_field"><?php esc_html_e( 'Start new ReBlock with Excelsior Bootstrap', 'reblock' ); ?></label>
+    <label for="reblock_start_with_excelsior_bootstrap"><?php esc_html_e( 'Start new ReBlock with Excelsior Bootstrap', 'reblock' ); ?></label>
     <?php
 }
 
 function reblock_styles_scripts_section() {
-    echo '<p>' . esc_html__( 'Select registered styles and JavaScript files to load on the ReBlock single post.', 'reblock' ) . '</p>';
+    echo '<p>' . esc_html__( 'Specify which registered styles and JavaScript files should be loaded for a single ReBlock post by entering their handles on separate lines. Use * (wildcard) to allow all. To remove all, leave them empty.', 'reblock' ) . '</p>';
 }
 
-function reblock_sanitize_styles( $input ) {
-    // Make sure the input is an array
-    if ( is_array( $input ) ) {
-        // Sanitize each value and convert the array into a comma-separated string
-        $input = array_map( 'sanitize_text_field', $input );
-        return implode( ',', $input );
+function reblock_show_wp_admin_bar() {
+    $option = get_option( 'reblock_show_wp_admin_bar', true );
+    ?>
+    <input type="checkbox" name="reblock_show_wp_admin_bar" value="1" <?php checked( 1, $option, true ); ?> />
+    <label for="reblock_show_wp_admin_bar"><?php esc_html_e( 'Show Admin Bar', 'reblock' ); ?></label>
+    <?php
+}
+
+function reblock_sanitize_styles_scripts( $input ) {
+    $lines = preg_split( '/[\r\n]+/', $input );
+    $lines = array_filter( array_map( 'trim', $lines ) );
+    if ( in_array( '*', $lines ) ) {
+        return '*';
     }
-    return '';
+    if ( empty( $lines ) ) {
+        return '';
+    }
+    return implode( ',', $lines );
 }
 
 function reblock_allowed_styles() {
-    global $wp_styles;
-    $saved_styles = get_option( 'reblock_allowed_styles', '' );
-    $selected_styles = $saved_styles ? explode( ',', $saved_styles ) : array();
-    echo '<pre>' . print_r( $wp_styles->queue, true ) . '</pre>';
-    // foreach ( $wp_styles->queue as $handle => $style ) {
-    //     echo esc_html($handle) . '<br />';
-    //     echo esc_url($style->src) . '<br /><br />';
-    // }
+    $saved_styles = get_option( 'reblock_allowed_styles', '*' );
+    $selected_styles = str_replace( ',', "\n", $saved_styles );
+    ?>
+    <textarea name="reblock_allowed_styles" rows="5" cols="50"><?php echo esc_textarea( $selected_styles ); ?></textarea>
+    <?php
 }
 
+function reblock_allowed_scripts() {
+    $saved_scripts = get_option( 'reblock_allowed_scripts', '*' );
+    $selected_scripts = str_replace( ',', "\n", $saved_scripts );
+    ?>
+    <textarea name="reblock_allowed_scripts" rows="5" cols="50"><?php echo esc_textarea( $selected_scripts ); ?></textarea>
+    <?php
+}
 
 ?>

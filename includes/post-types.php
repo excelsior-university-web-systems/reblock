@@ -125,41 +125,72 @@ function reblock_remove_all_styles_and_scripts() {
 	if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
 		
 		global $wp_styles, $wp_scripts;
-		
-		add_filter( 'show_admin_bar', '__return_false' );
 
-        $allowedStyles = array();
-		$allowedScripts = array();
+        $allowed_styles = array();
+		$allowed_scripts = array();
+
+        if ( !get_option( 'reblock_show_wp_admin_bar', true ) ) {
+            add_filter( 'show_admin_bar', '__return_false' );
+            wp_dequeue_style( 'admin-bar' );
+            wp_deregister_style( 'admin-bar' );
+        }
 		
         // retain Excelsior Bootstrap framework if Excelsior Bootstrap Editor is active
         if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
-            array_push( $allowedStyles, 'excelsior-bootstrap-editor-frontend-style' );
-            array_push( $allowedScripts, 'excelsior-bootstrap-editor-frontend-script' );
+            array_push( $allowed_styles, 'excelsior-bootstrap-editor-frontend-style' );
+            array_push( $allowed_scripts, 'excelsior-bootstrap-editor-frontend-script' );
         }
 
-		// Remove all styles
-		foreach( $wp_styles->queue as $style ) {
-			
-			if ( in_array( $style, $allowedStyles ) ) {
-				continue;
-			}
-			
-			wp_dequeue_style( $style );
-			wp_deregister_style( $style );
-			
-		}
+        $user_allowed_styles_settings = get_option( 'reblock_allowed_styles', '*' );
+        $user_allowed_scripts_settings = get_option( 'reblock_allowed_scripts', '*' );
 
-		// Remove all scripts
-		foreach( $wp_scripts->queue as $script ) {
+        if ( $user_allowed_styles_settings !== '*' ) {
+
+            $user_allowed_styles = explode( ',', $user_allowed_styles_settings );
+            $combined_styles = array_merge( $allowed_styles, $user_allowed_styles );
+
+            if ( get_option( 'reblock_show_wp_admin_bar', true ) ) {
+                if ( !in_array( 'admin-bar', $combined_styles ) ) {
+                    array_push( $combined_styles, 'admin-bar' );
+                }
+            }
+
+            foreach( $wp_styles->queue as $style ) {
 			
-			if ( in_array( $script, $allowedScripts ) ) {
-				continue;
-			}
+                if ( in_array( $style, $combined_styles ) ) {
+                    continue;
+                }
+                
+                wp_dequeue_style( $style );
+                wp_deregister_style( $style );
+                
+            }
+
+        }
+		
+        if ( $user_allowed_scripts_settings !== '*' ) {
+
+            $user_allowed_scripts = explode( ',', $user_allowed_scripts_settings );
+            $combined_scripts = array_merge( $allowed_scripts, $user_allowed_scripts );
+
+            if ( get_option( 'reblock_show_wp_admin_bar', true ) ) {
+                if ( !in_array( 'admin-bar', $combined_scripts ) ) {
+                    array_push( $combined_scripts, 'admin-bar' );
+                }
+            }
+
+            foreach( $wp_scripts->queue as $script ) {
 			
-			wp_dequeue_script( $script );
-			wp_deregister_script( $script );
-			
-		}
+                if ( in_array( $script, $combined_scripts ) ) {
+                    continue;
+                }
+                
+                wp_dequeue_script( $script );
+                wp_deregister_script( $script );
+                
+            }
+
+        }
 		
 	}
 	
