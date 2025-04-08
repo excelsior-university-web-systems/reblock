@@ -75,6 +75,7 @@ function reblock_register_settings() {
     );
 
     /*** EXCELSIOR BOOTSTRAP EDITOR ***/
+
     if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
         // Register a new setting for "reblock_settings_group".
         register_setting( 'reblock_settings_group', 'reblock_start_with_excelsior_bootstrap' );
@@ -135,6 +136,27 @@ function reblock_register_settings() {
         __NAMESPACE__.'\\reblock_allowed_styles_scripts',
         'reblock_settings',
         'reblock_styles_scripts'
+    );
+
+    /*** Permission ***/
+
+    register_setting( 'reblock_settings_group', 'reblock_allowed_roles', array(
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_roles'
+    ) );
+
+    add_settings_section(
+        'reblock_permission_section',
+        __( 'Permission', 'reblock' ),
+        __NAMESPACE__.'\\reblock_permission_section',
+        'reblock_settings'
+    );
+
+    add_settings_field(
+        'reblock_allowed_roles',
+        __( 'Roles', 'reblock' ),
+        __NAMESPACE__.'\\reblock_allowed_roles',
+        'reblock_settings',
+        'reblock_permission_section'
     );
     
 }
@@ -235,6 +257,44 @@ function reblock_allowed_styles_scripts() {
     ?>
     <textarea name="reblock_allowed_styles_scripts" rows="5" cols="50"><?php echo esc_textarea( $selected_styles ); ?></textarea>
     <?php
+}
+
+/** Permission **/
+
+function reblock_permission_section() {
+    echo '';
+}
+
+function reblock_sanitize_roles( $input ) {
+    // Make sure the input is an array
+    if ( is_array( $input ) ) {
+        // Sanitize each value and convert the array into a comma-separated string
+        $input = array_map( 'sanitize_text_field', $input );
+        return implode( ',', $input );
+    }
+    return '';
+}
+
+function reblock_allowed_roles() {
+    
+    global $wp_roles;
+
+    if ( ! isset( $wp_roles ) ) {
+        $wp_roles = new \WP_Roles();
+    }
+
+    $saved_roles = get_option( 'reblock_allowed_roles', array( 'administrator' ) );
+    $selected_roles = $saved_roles ? explode( ',', $saved_roles ) : array('administrator');
+
+    foreach ( $wp_roles->get_names() as $role_key => $role_name ) {
+        ?>
+        <label>
+            <input type="checkbox" name="reblock_allowed_roles[]" value="<?php echo esc_attr( $role_key ); ?>" <?php checked( ( $role_key === 'administrator' || in_array( $role_key, $selected_roles ) ), true ); ?> <?php disabled( ( $role_key === 'administrator' ), true ); ?> />
+            <?php echo esc_html( $role_name ); ?>
+        </label><br>
+        <?php
+    }
+    
 }
 
 /** others */

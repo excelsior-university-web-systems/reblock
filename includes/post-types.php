@@ -48,7 +48,7 @@ function create_reblock_post_type() {
         'show_in_menu'        => true,
         'map_meta_cap'        => true,
         'capability_type'     => REBLOCK_POST_TYPE_NAME,
-        'supports'            => array( 'title', 'editor', 'revisions', 'custom-fields' ),
+        'supports'            => array( 'title', 'editor', 'author', 'revisions', 'custom-fields' ),
         'has_archive'         => false,
         'exclude_from_search' => !$is_searchable,
         'publicly_queryable'  => $is_public,
@@ -75,13 +75,28 @@ function create_reblock_post_type() {
     // Retrieve capabilities for the custom post type
     $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
     $capabilities = $post_type_object->cap;
+    
 
-    // Assign capabilities to administrator
-    $role = get_role( 'administrator' );
-    foreach ( $capabilities as $cap ) {
-        $role->add_cap( $cap );
+    // Assign capabilities to allowed roles
+    $required_roles = array( 'administrator' );
+    $allowed_roles = get_option( 'reblock_allowed_roles', 'administrator' );
+    $allowed_roles_array = array_map( 'trim', explode( ',', $allowed_roles ) );
+    $combined_roles = array_filter( array_unique( array_merge( $required_roles, $allowed_roles_array ) ) );
+
+    reblock_remove_capability_from_all_except_admin( $capabilities );
+
+    foreach ( $combined_roles as $allowed_role ) {
+        $role = get_role( $allowed_role );
+
+        if ( $role ) {
+            foreach ( $capabilities as $cap ) {
+                if ( ! $role->has_cap( $cap ) ) {
+                    $role->add_cap( $cap );
+                }
+            }
+        }
     }
-
+    
     flush_rewrite_rules();
 
 }
@@ -286,4 +301,24 @@ function reblock_exclude_from_search( $query ) {
 }
 
 add_action( 'pre_get_posts', __NAMESPACE__.'\\reblock_exclude_from_search' );
+
+function reblock_remove_capability_from_all_except_admin( $capabilities ) {
+    global $wp_roles;
+    foreach ( $wp_roles->roles as $role_key => $role_info ) {
+        if ( 'administrator' === $role_key ) {
+            continue;
+        }
+
+        $role = get_role( $role_key );
+
+        if ( $role ) {
+            foreach ( $capabilities as $cap ) {
+                if ( $cap == 'read' ) continue;
+                if ( $role->has_cap( $cap ) ) {
+                    $role->remove_cap( $cap );
+                }
+            }
+        }
+    }
+}
 ?>
