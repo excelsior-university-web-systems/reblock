@@ -14,6 +14,12 @@ if ( !defined( 'ABSPATH' ) ) { exit; }
  */
 function create_reblock_post_type() {
 
+    $visibility = get_option( 'reblock_is_public', true );
+    $is_public = ( $visibility == '1' );
+
+    $searchability = get_option( 'reblock_is_searchable', false );
+    $is_searchable = ( $searchability == '1' );
+    
     $args = array(
         'labels'                    => array(
             'name'                  =>  REBLOCK_PLUGIN_NAME,
@@ -37,15 +43,15 @@ function create_reblock_post_type() {
             'item_updated'          =>  REBLOCK_PLUGIN_NAME . ' updated',
             'item_trashed'          =>  REBLOCK_PLUGIN_NAME . ' trashed'
         ),
-        'public'              => true,
+        'public'              => $is_public,
         'show_ui'             => true,
         'show_in_menu'        => true,
         'map_meta_cap'        => true,
         'capability_type'     => REBLOCK_POST_TYPE_NAME,
         'supports'            => array( 'title', 'editor', 'revisions', 'custom-fields' ),
         'has_archive'         => false,
-        'exclude_from_search' => true,
-        'publicly_queryable'  => true,
+        'exclude_from_search' => !$is_searchable,
+        'publicly_queryable'  => $is_public,
         'show_in_nav_menus'   => false,
         'show_in_admin_bar'   => true,
         'show_in_rest'        => true,
@@ -57,6 +63,11 @@ function create_reblock_post_type() {
     if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT && get_option( 'reblock_start_with_excelsior_bootstrap', false ) ) {
         $args['template'] = array( array( 'excelsior-bootstrap-editor/namespace' ) );
         $args['template_lock'] = 'insert';
+    }
+
+    // Unregister the post type first (if it already exists)
+    if ( post_type_exists( REBLOCK_POST_TYPE_NAME ) ) {
+        unregister_post_type( REBLOCK_POST_TYPE_NAME );
     }
 
     register_post_type( REBLOCK_POST_TYPE_NAME, $args );
@@ -71,6 +82,8 @@ function create_reblock_post_type() {
         $role->add_cap( $cap );
     }
 
+    flush_rewrite_rules();
+
 }
 
 /**
@@ -84,7 +97,6 @@ function create_reblock_post_type() {
  */
 function reblock_initialize() {
     create_reblock_post_type();
-    flush_rewrite_rules();
 }
 
 add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
@@ -256,4 +268,22 @@ function reblock_disable_slug_in_quick_edit() {
 }
 
 add_action( 'admin_footer', __NAMESPACE__.'\\reblock_disable_slug_in_quick_edit' );
+
+function reblock_exclude_from_search( $query ) {
+    if ( $query->is_search() && ! is_admin() && $query->is_main_query() && !get_option( 'reblock_is_searchable', false ) ) {
+        $post_type = $query->get( 'post_type' );
+
+        // Forcefully remove 'reblock' from post_type query
+        if ( $post_type === REBLOCK_POST_TYPE_NAME ) {
+            $query->set( 'post_type', 'no_reblock_results' );
+        }
+
+        // exclude it even if mixed in an array
+        if ( is_array( $post_type ) ) {
+            $query->set( 'post_type', array_diff( $post_type, [ REBLOCK_POST_TYPE_NAME ] ) );
+        }
+    }
+}
+
+add_action( 'pre_get_posts', __NAMESPACE__.'\\reblock_exclude_from_search' );
 ?>

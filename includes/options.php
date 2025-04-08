@@ -40,6 +40,8 @@ function reblock_register_settings() {
     /*** General ***/
 
     register_setting( 'reblock_settings_group', 'reblock_hash_slug_option' );
+    register_setting( 'reblock_settings_group', 'reblock_is_public' );
+    register_setting( 'reblock_settings_group', 'reblock_is_searchable' );
 
     add_settings_section(
         'reblock_general_section',
@@ -49,11 +51,27 @@ function reblock_register_settings() {
     );
 
     add_settings_field(
-        'reblock_hash_slug_option', // Field ID
-        __( 'Unlisted', 'reblock' ), // Field title/label
-        __NAMESPACE__.'\\reblock_hash_slug_option', // Callback function to render the field
-        'reblock_settings', // Page on which to add this field
-        'reblock_general_section' // Section in which to add the field
+        'reblock_is_public',
+        __( 'Visibility', 'reblock' ),
+        __NAMESPACE__.'\\reblock_is_public',
+        'reblock_settings',
+        'reblock_general_section'
+    );
+
+    add_settings_field(
+        'reblock_hash_slug_option',
+        __( 'Unlisted', 'reblock' ),
+        __NAMESPACE__.'\\reblock_hash_slug_option',
+        'reblock_settings',
+        'reblock_general_section'
+    );
+
+    add_settings_field(
+        'reblock_is_searchable',
+        __( 'Searchable', 'reblock' ),
+        __NAMESPACE__.'\\reblock_is_searchable',
+        'reblock_settings',
+        'reblock_general_section'
     );
 
     /*** EXCELSIOR BOOTSTRAP EDITOR ***/
@@ -133,8 +151,25 @@ function reblock_hash_slug_option() {
     $option = get_option( 'reblock_hash_slug_option', false );
     ?>
     <input type="checkbox" name="reblock_hash_slug_option" value="1" <?php checked( 1, $option, true ); ?> />
-    <label for="reblock_hash_slug_option"><?php esc_html_e( 'Hash the last part of the URL', 'reblock' ); ?></label>
-    <p class="description"><?php esc_html_e( 'Ensure only users with the exact URL can access.', 'reblock' ); ?></p>
+    <label for="reblock_hash_slug_option"><?php esc_html_e( 'Hash the last part of the URL (for Public only)', 'reblock' ); ?></label>
+    <p class="description"><?php esc_html_e( 'Ensure only users with the exact URLs can access posts.', 'reblock' ); ?></p>
+    <?php
+}
+
+function reblock_is_public() {
+    $option = get_option( 'reblock_is_public', true );
+    ?>
+    <input type="checkbox" name="reblock_is_public" value="1" <?php checked( 1, $option, true ); ?> />
+    <label for="reblock_is_public"><?php esc_html_e( 'Public', 'reblock' ); ?></label>
+    <p class="description"><?php esc_html_e( 'Display ReBlock posts on the front end with accessible URLs.', 'reblock' ); ?></p>
+    <?php
+}
+
+function reblock_is_searchable() {
+    $option = get_option( 'reblock_is_searchable', false );
+    ?>
+    <input type="checkbox" name="reblock_is_searchable" value="1" <?php checked( 1, $option, true ); ?> />
+    <label for="reblock_is_searchable"><?php esc_html_e( 'Include ReBlock posts in the front end search results (for Public only)', 'reblock' ); ?></label>
     <?php
 }
 
@@ -149,6 +184,7 @@ function reblock_start_with_excelsior_bootstrap() {
     ?>
     <input type="checkbox" name="reblock_start_with_excelsior_bootstrap" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_start_with_excelsior_bootstrap"><?php esc_html_e( 'Start new ReBlock with Excelsior Bootstrap', 'reblock' ); ?></label>
+    <p class="description"><?php esc_html_e( 'Automatically add the Excelsior Bootstrap block to the editor.', 'reblock' ); ?></p>
     <?php
 }
 
@@ -210,6 +246,5 @@ function reblock_option_updated( $option, $old_value, $new_value ) {
 }
 
 add_action( 'updated_option', __NAMESPACE__.'\\reblock_option_updated', 10, 3 );
-
 
 ?>
