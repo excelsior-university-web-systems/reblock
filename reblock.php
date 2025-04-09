@@ -5,7 +5,7 @@
  * Description: ReBlock creates a centralized content hub to efficiently manage common reusable content blocks, ensuring consistency, quality, and accessibility.
  * Author:      Ethan Lin
  * Author URI:  https://profiles.wordpress.org/eslin87/
- * Version:     1.0.0
+ * Version:     1.0.1
  */
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
@@ -20,4 +20,4 @@ require_once __DIR__ . '/includes/post-types.php';
 require_once __DIR__ . '/includes/block.php';
 require_once __DIR__ . '/includes/options.php';
 
-register_activation_hook( __FILE__, __NAMESPACE__.'\\reblock_activate_plugin' );
+register_activation_hook( __FILE__, 'eslin87\ReBlock\reblock_activate_plugin' );
