@@ -6,6 +6,7 @@
  * Author:      Ethan Lin
  * Author URI:  https://profiles.wordpress.org/eslin87/
  * Version:     1.0.1
+ * License:     GPLv2 or later
  */
 
 if ( !defined( 'ABSPATH' ) ) { exit; }

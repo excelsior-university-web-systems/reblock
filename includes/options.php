@@ -39,9 +39,23 @@ function reblock_register_settings() {
         
     /*** General ***/
 
-    register_setting( 'reblock_settings_group', 'reblock_hash_slug_option' );
-    register_setting( 'reblock_settings_group', 'reblock_is_public' );
-    register_setting( 'reblock_settings_group', 'reblock_is_searchable' );
+    register_setting( 'reblock_settings_group', 'reblock_hash_slug_option', array(
+        'type' => 'boolean',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+        'default' => false,
+    ) );
+
+    register_setting( 'reblock_settings_group', 'reblock_is_public', array(
+        'type' => 'boolean',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+        'default' => true,
+    ) );
+
+    register_setting( 'reblock_settings_group', 'reblock_is_searchable', array(
+        'type' => 'boolean',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+        'default' => false,
+    ) );
 
     add_settings_section(
         'reblock_general_section',
@@ -78,7 +92,11 @@ function reblock_register_settings() {
 
     if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
         // Register a new setting for "reblock_settings_group".
-        register_setting( 'reblock_settings_group', 'reblock_start_with_excelsior_bootstrap' );
+        register_setting( 'reblock_settings_group', 'reblock_start_with_excelsior_bootstrap', array(
+            'type' => 'boolean',
+            'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+            'default' => false,
+        ) );
 
         // Add Excelsior Bootstrap Editor Section
         add_settings_section(
@@ -101,10 +119,22 @@ function reblock_register_settings() {
 
     /*** Styles and JavaScript ***/
 
-    register_setting( 'reblock_settings_group', 'reblock_show_wp_admin_bar' );
-    register_setting( 'reblock_settings_group', 'reblock_allow_global_styles' );
+    register_setting( 'reblock_settings_group', 'reblock_show_wp_admin_bar', array(
+        'type' => 'boolean',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+        'default' => false,
+    ) );
+
+    register_setting( 'reblock_settings_group', 'reblock_allow_global_styles', array(
+        'type' => 'boolean',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_checkbox',
+        'default' => true,
+    ) );
+
     register_setting( 'reblock_settings_group', 'reblock_allowed_styles_scripts', array(
-        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_styles_scripts'
+        'type' => 'string',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_styles_scripts',
+        'default' => '*'
     ) );
 
     add_settings_section(
@@ -141,7 +171,9 @@ function reblock_register_settings() {
     /*** Permission ***/
 
     register_setting( 'reblock_settings_group', 'reblock_allowed_roles', array(
-        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_roles'
+        'type' => 'string',
+        'sanitize_callback' => __NAMESPACE__.'\\reblock_sanitize_roles',
+        'default' => ''
     ) );
 
     add_settings_section(
@@ -195,6 +227,10 @@ function reblock_is_searchable() {
     <?php
 }
 
+function reblock_sanitize_checkbox( $value ) {
+    return ( isset( $value ) && $value === '1' ) ? '1' : '0';
+}
+
 /*** Excelsior Bootstrap Editor ***/
 
 function reblock_excelsior_bootstrap_editor_section() {
@@ -213,13 +249,44 @@ function reblock_start_with_excelsior_bootstrap() {
 /*** Styles and JavaScript ***/
 
 function reblock_styles_scripts_section() {
-    echo '<p>' . __( 'Specify which registered styles and JavaScript files should be loaded for a single ReBlock post by entering their handles (unique identifiers) on separate lines.', 'reblock' ) . '</p>';
-    echo '<ul style="list-style: revert; padding: revert;">';
-    echo '<li>' . wp_kses_post( __( 'Enter <strong>*</strong> (wildcard) to allow all registered styles and scripts.', 'reblock' ) ) . '</li>';
-    echo '<li>' . wp_kses_post( __( 'Enter one or more handles to load only the specified styles and scripts. <em>All others will be excluded.</em>', 'reblock' ) ) . '</li>';
-    echo '<li>' . wp_kses_post( __( 'Leave the field <strong>empty to remove all</strong> registered styles and scripts.', 'reblock' ) ) . '</li>';
-    echo '</ul>';
-    echo '<div style="background:#fff; border-left: 4px solid #0073aa; margin:13px 0; padding: 10px;">' . wp_kses_post( __( '<p style="margin:0;"><strong>Note:</strong> This only applies to styles and scripts that are registered with WordPress using <code>wp_register_style()</code> and <code>wp_register_script()</code>. Any styles or scripts loaded by other means (e.g., hardcoded in the theme or loaded via external sources) are not affected by this setting.</p>', 'reblock' ) ) . '</div>';
+    ?>
+    <p><?php esc_html_e( 'Specify which registered styles and JavaScript files should be loaded for a single ReBlock post by entering their handles (unique identifiers) on separate lines.', 'reblock' ); ?></p>
+
+    <ul style="list-style: revert; padding: revert;">
+        <li><?php
+        printf(
+            // translators: %s is the HTML <strong>*</strong> for the wildcard symbol
+            wp_kses_post( __( 'Enter %s (wildcard) to allow all registered styles and scripts.', 'reblock' ) ),
+            '<strong>*</strong>'
+        ); ?></li>
+
+        <li><?php
+        printf(
+            // translators: %s is the texts in <em> HTML tag.
+            wp_kses_post( __( 'Enter one or more handles to load only the specified styles and scripts. %s', 'reblock' ) ),
+            '<em>' . esc_html__( 'All others will be excluded.', 'reblock' ) . '</em>'
+        ); ?></li>
+
+        <li><?php 
+        printf(
+            // translators: %s is the word empty in <strong> HTML tag.
+            wp_kses_post( __( 'Leave the field %s to remove all registered styles and scripts.', 'reblock' ) ),
+            '<strong>' . esc_html__( 'empty', 'reblock' ) . '</strong>'
+        ); ?></li>
+    </ul>
+
+    <div style="background:#fff; border-left: 4px solid #0073aa; margin:13px 0; padding: 10px;">
+        <p style="margin:0;"><?php
+            printf(
+                // translators: %1$s is "Note:" in <strong>, %2$s is <code>wp_register_style()</code>, %3$s is <code>wp_register_script()</code>
+                wp_kses_post( __( '%1$s This only applies to styles and scripts that are registered with WordPress using %2$s and %3$s. Any styles or scripts loaded by other means (e.g., hardcoded in the theme or loaded via external sources) are not affected by this setting.', 'reblock' ) ),
+                '<strong>' . esc_html__( 'Note:', 'reblock' ) . '</strong>',
+                '<code>wp_register_style()</code>',
+                '<code>wp_register_script()</code>'
+            );
+        ?></p>
+    </div>
+    <?php
 }
 
 function reblock_show_wp_admin_bar() {
