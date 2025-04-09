@@ -299,54 +299,33 @@ function reblock_allowed_roles() {
 
 /** others */
 
-function reblock_remove_capability_from_all_except_admin( $capabilities ) {
-    if ( ! is_array( $capabilities ) || empty( $capabilities ) ) {
-        return;
-    }
-
-    global $wp_roles;
-
-    if ( ! isset( $wp_roles ) ) {
-        $wp_roles = wp_roles();
-    }
-
-    $protected_caps = array( 'read', 'edit_posts', 'upload_files' );
-    $filtered_caps = array_diff( $capabilities, $protected_caps );
-
-    foreach ( $wp_roles->roles as $role_key => $role_info ) {
-        if ( 'administrator' === $role_key ) {
-            continue;
-        }
-
-        $role = get_role( $role_key );
-
-        if ( ! $role ) {
-            continue;
-        }
-
-        foreach ( $filtered_caps as $cap ) {
-            if ( $role->has_cap( $cap ) ) {
-                $role->remove_cap( $cap );
-            }
-        }
-    }
-}
-
-function reblock_update_role_capabilities() {
+function reblock_update_role_capabilities( $old_value = '', $new_value = '' ) {
     $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
-
     if ( ! $post_type_object ) return;
 
     $capabilities = $post_type_object->cap;
 
-    $required_roles = array( 'administrator' ); // always included
-    $allowed_roles = get_option( 'reblock_allowed_roles', 'administrator' );
-    $allowed_roles_array = array_map( 'trim', explode( ',', $allowed_roles ) );
-    $combined_roles = array_filter( array_unique( array_merge( $required_roles, $allowed_roles_array ) ) );
+    $required_roles = array( 'administrator' );
 
-    reblock_remove_capability_from_all_except_admin( $capabilities );
+    $old_roles = is_string( $old_value ) ? array_map( 'trim', explode( ',', $old_value ) ) : array();
+    $new_roles = is_string( $new_value ) ? array_map( 'trim', explode( ',', $new_value ) ) : array();
 
-    foreach ( $combined_roles as $role_name ) {
+    $removed_roles = array_diff( $old_roles, $new_roles );
+    $allowed_roles = array_filter( array_unique( array_merge( $required_roles, $new_roles ) ) );
+
+    // Remove caps from roles that are no longer allowed (and aren't admin)
+    foreach ( $removed_roles as $role_name ) {
+        if ( $role_name === 'administrator' ) continue;
+        $role = get_role( $role_name );
+        if ( $role ) {
+            foreach ( $capabilities as $cap ) {
+                $role->remove_cap( $cap );
+            }
+        }
+    }
+
+    // Add caps to allowed roles (including admin)
+    foreach ( $allowed_roles as $role_name ) {
         $role = get_role( $role_name );
         if ( $role ) {
             foreach ( $capabilities as $cap ) {
@@ -362,7 +341,7 @@ function reblock_option_updated( $option, $old_value, $new_value ) {
     }
 
     if ( 'reblock_allowed_roles' === $option ) {
-        reblock_update_role_capabilities();
+        reblock_update_role_capabilities( $old_value, $new_value );
     }
 }
 
