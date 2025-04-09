@@ -299,12 +299,72 @@ function reblock_allowed_roles() {
 
 /** others */
 
+function reblock_remove_capability_from_all_except_admin( $capabilities ) {
+    if ( ! is_array( $capabilities ) || empty( $capabilities ) ) {
+        return;
+    }
+
+    global $wp_roles;
+
+    if ( ! isset( $wp_roles ) ) {
+        $wp_roles = wp_roles();
+    }
+
+    $protected_caps = array( 'read', 'edit_posts', 'upload_files' );
+    $filtered_caps = array_diff( $capabilities, $protected_caps );
+
+    foreach ( $wp_roles->roles as $role_key => $role_info ) {
+        if ( 'administrator' === $role_key ) {
+            continue;
+        }
+
+        $role = get_role( $role_key );
+
+        if ( ! $role ) {
+            continue;
+        }
+
+        foreach ( $filtered_caps as $cap ) {
+            if ( $role->has_cap( $cap ) ) {
+                $role->remove_cap( $cap );
+            }
+        }
+    }
+}
+
+function reblock_update_role_capabilities() {
+    $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
+
+    if ( ! $post_type_object ) return;
+
+    $capabilities = $post_type_object->cap;
+
+    $required_roles = array( 'administrator' ); // always included
+    $allowed_roles = get_option( 'reblock_allowed_roles', 'administrator' );
+    $allowed_roles_array = array_map( 'trim', explode( ',', $allowed_roles ) );
+    $combined_roles = array_filter( array_unique( array_merge( $required_roles, $allowed_roles_array ) ) );
+
+    reblock_remove_capability_from_all_except_admin( $capabilities );
+
+    foreach ( $combined_roles as $role_name ) {
+        $role = get_role( $role_name );
+        if ( $role ) {
+            foreach ( $capabilities as $cap ) {
+                $role->add_cap( $cap );
+            }
+        }
+    }
+}
+
 function reblock_option_updated( $option, $old_value, $new_value ) {
-    if ( 'reblock_hash_slug_option' === $option ) {
+    if ( 'reblock_hash_slug_option' === $option && $old_value !== $new_value ) {
         flush_rewrite_rules();
+    }
+
+    if ( 'reblock_allowed_roles' === $option ) {
+        reblock_update_role_capabilities();
     }
 }
 
 add_action( 'updated_option', __NAMESPACE__.'\\reblock_option_updated', 10, 3 );
-
 ?>

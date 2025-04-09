@@ -19,3 +19,5 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/includes/post-types.php';
 require_once __DIR__ . '/includes/block.php';
 require_once __DIR__ . '/includes/options.php';
+
+register_activation_hook( __FILE__, __NAMESPACE__.'\\reblock_activate_plugin' );
