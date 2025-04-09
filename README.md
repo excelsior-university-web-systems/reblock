@@ -4,8 +4,8 @@
 **Tags:** reusable, centralized, content, block  
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
-**Tested up to:** 6.7  
-**Stable tag:** 1.0.0  
+**Tested up to:** 6.8  
+**Stable tag:** 1.0.1  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -38,6 +38,10 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
-### 1.0.0 (pending...) ###
+### 1.0.1 (pending...) ###
+
+* Code refactoring to improve process and performance
+
+### 1.0.0 (04/09/2025) ###
 
 * First release
