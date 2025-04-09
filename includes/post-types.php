@@ -208,14 +208,32 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__.'\\reblock_remove_all_styles_and
  * @return array Modified post data with hashed slug if applicable.
  */
 function reblock_hash_slug( $data, $postarr ) {
-    if ( $data['post_type'] == REBLOCK_POST_TYPE_NAME && get_option( 'reblock_hash_slug_option', false ) ) {
-        $title_hash = md5( 'reblock/' . $postarr['ID'] );
-        $data['post_name'] = $title_hash;
+    if ( $data['post_type'] !== REBLOCK_POST_TYPE_NAME ) {
+        return $data;
     }
+
+    if ( ! get_option( 'reblock_hash_slug_option', false ) ) {
+        return $data;
+    }
+
+    // Detect if this is a new post (no ID or not yet in DB)
+    $is_new_post = empty( $postarr['ID'] ) || get_post_status( $postarr['ID'] ) === false;
+
+    // Check if this is a duplicate or import (often come in with existing slug or title)
+    $is_manual_slug = ! empty( $postarr['post_name'] );
+
+    if ( $is_new_post || $is_manual_slug ) {
+        $time = microtime( true );
+        $rand = wp_generate_password( 6, false );
+        $base = 'reblock-' . $time . '-' . $rand;
+
+        $data['post_name'] = md5( $base );
+    }
+
     return $data;
 }
 
-add_filter( 'wp_insert_post_data', __NAMESPACE__.'\\reblock_hash_slug', 10, 2 );
+add_filter( 'wp_insert_post_data', __NAMESPACE__ . '\\reblock_hash_slug', 10, 2 );
 
 /**
  * Modifies the document title by removing site name and tagline for ReBlock pages.

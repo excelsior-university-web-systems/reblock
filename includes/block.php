@@ -17,13 +17,13 @@ function reblock_add_category( $categories, $post ) {
 
 add_filter( 'block_categories_all', __NAMESPACE__.'\\reblock_add_category' , 10, 2 );
 
-function reblock_enqueue_block_editor_assets() {
+function reblock_register_block_type() {
     register_block_type( plugin_dir_path( __FILE__ ) . '../build', array(
         'render_callback' => __NAMESPACE__.'\\reblock_content_renderer'
     ) );
 }
 
-add_action( 'init', __NAMESPACE__.'\\reblock_enqueue_block_editor_assets' );
+add_action( 'init', __NAMESPACE__.'\\reblock_register_block_type' );
 
 function reblock_content_renderer( $attributes ) {
     
@@ -49,6 +49,26 @@ function reblock_content_renderer( $attributes ) {
 
     return '';
 }
+
+function reblock_enqueue_block_editor_assets() {
+    $screen = get_current_screen();
+
+    if ( $screen->post_type === REBLOCK_POST_TYPE_NAME && get_option( 'reblock_hash_slug_option', false ) ) {
+        $css = '
+            .editor-post-url > div:nth-of-type(2):not(.block-editor-inspector-popover-header) > div:first-of-type {
+                display: none !important;
+            }
+            .editor-post-url__input .components-base-control__field,
+            .editor-post-url__input input {
+                display: none !important;
+            }
+        ';
+
+        wp_add_inline_style( 'reblock-reblock-block-selector-editor-style', $css );
+    }
+}
+
+add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\reblock_enqueue_block_editor_assets' );
 
 /************ helpers ************/
 
