@@ -283,7 +283,7 @@ function reblock_allowed_roles() {
         $wp_roles = new \WP_Roles();
     }
 
-    $saved_roles = get_option( 'reblock_allowed_roles', array( 'administrator' ) );
+    $saved_roles = get_option( 'reblock_allowed_roles', 'administrator' );
     $selected_roles = $saved_roles ? explode( ',', $saved_roles ) : array('administrator');
 
     foreach ( $wp_roles->get_names() as $role_key => $role_name ) {
