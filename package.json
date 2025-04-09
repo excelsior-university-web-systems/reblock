@@ -1,6 +1,6 @@
 {
   "name": "reblock",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A WordPress plugin that manages reusable content blocks.",
   "main": "build/index.js",
   "scripts": {
@@ -13,13 +13,9 @@
     "lint:md:docs": "wp-scripts lint-md-docs",
     "lint:pkg-json": "wp-scripts lint-pkg-json",
     "packages-update": "wp-scripts packages-update",
-    "bash-post-zip": "bash postprocess_zip.sh",
-    "ps1-post-zip": "powershell ./postprocess_zip.ps1",
-    "bash-plugin-zip": "wp-scripts plugin-zip && npm run bash-post-zip",
-    "ps1-plugin-zip": "wp-scripts plugin-zip && npm run ps1-post-zip",
+    "plugin-zip": "wp-scripts plugin-zip && node post-process-zip.js",
     "start": "wp-scripts start",
-    "bash-ship": "npm run build && npm run bash-plugin-zip",
-    "ps1-ship": "npm run build && npm run ps1-plugin-zip",
+    "ship": "npm run build && npm run plugin-zip",
     "test:e2e": "wp-scripts test-e2e",
     "test:unit": "wp-scripts test-unit-js"
   },
@@ -34,6 +30,9 @@
   "license": "GPLv3",
   "devDependencies": {
     "@wordpress/scripts": "^30.14.1",
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
+    "fs-extra": "^11.3.0",
     "grunt": "^1.6.1",
     "grunt-sass": "^4.0.0",
     "grunt-wp-readme-to-markdown": "^2.1.0",
