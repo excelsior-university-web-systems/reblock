@@ -142,9 +142,26 @@ function reblock_remove_all_styles_and_scripts() {
         return;
     }
 
+    wp_register_script(
+        'reblock-single',
+        plugin_dir_url( __FILE__ ) . '../build/reblock-single.js',
+        array(),
+        null,
+        array (
+            'strategy' => 'defer',
+            'in_footer' => true
+        )
+    );
+
+    wp_enqueue_script( 'reblock-single' );
+
+    wp_localize_script( 'reblock-single', 'reblock_obj', array(
+        'postId' => get_the_ID()
+    ) );
+
     global $wp_styles, $wp_scripts;
 
-    $required = [];
+    $required = [ 'reblock-single' ];
 
     // Disable admin bar if option is false
     if ( !get_option( 'reblock_show_wp_admin_bar', true ) ) {

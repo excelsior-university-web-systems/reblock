@@ -1,0 +1,1 @@
+(()=>{const e=document.querySelector("#reblock-"+reblock_obj.postId);let t=document.documentElement.offsetHeight;if(e){const e=()=>{const e=document.documentElement.offsetHeight;t!=e&&(t=e,window.parent.postMessage({id:reblock_obj.postId,height:t},"*"))};window.parent.postMessage({id:reblock_obj.postId,height:t},"*"),window.addEventListener("resize",e)}})();
