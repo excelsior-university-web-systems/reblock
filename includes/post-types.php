@@ -216,13 +216,10 @@ function reblock_hash_slug( $data, $postarr ) {
         return $data;
     }
 
-    // Detect if this is a new post (no ID or not yet in DB)
+    // Only generate slug if it's a new post
     $is_new_post = empty( $postarr['ID'] ) || get_post_status( $postarr['ID'] ) === false;
 
-    // Check if this is a duplicate or import (often come in with existing slug or title)
-    $is_manual_slug = ! empty( $postarr['post_name'] );
-
-    if ( $is_new_post || $is_manual_slug ) {
+    if ( $is_new_post ) {
         $time = microtime( true );
         $rand = wp_generate_password( 6, false );
         $base = 'reblock-' . $time . '-' . $rand;
