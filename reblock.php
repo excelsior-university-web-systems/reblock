@@ -11,6 +11,13 @@
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
 
+if ( ! function_exists( 'get_plugin_data' ) ) {
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+
+$plugin_data = get_plugin_data( __FILE__ );
+
+define( 'REBLOCK_VERSION', $plugin_data['Version'] );
 define( 'REBLOCK_PLUGIN_NAME', 'ReBlock' );
 define( 'REBLOCK_POST_TYPE_NAME', 'reblock' );
 define( 'EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT', is_plugin_active( 'excelsior-bootstrap-editor/excelsior-bootstrap-editor.php' ) );

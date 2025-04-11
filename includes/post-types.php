@@ -146,15 +146,13 @@ function reblock_remove_all_styles_and_scripts() {
         'reblock-single',
         plugin_dir_url( __FILE__ ) . '../build/reblock-single.js',
         array(),
-        null,
+        REBLOCK_VERSION,
         array (
             'strategy' => 'defer',
             'in_footer' => true
         )
     );
-
     wp_enqueue_script( 'reblock-single' );
-
     wp_localize_script( 'reblock-single', 'reblock_obj', array(
         'postId' => get_the_ID()
     ) );
