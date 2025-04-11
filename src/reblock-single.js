@@ -9,6 +9,6 @@ if ( reblock ) {
 			window.parent.postMessage( { id: reblock_obj.postId, height: currentHeight }, '*' );
         }
     };
-    window.parent.postMessage( { id: reblock_obj.postId, height: currentHeight }, '*' );
+    window.parent.postMessage( { id: reblock_obj.postId, type: 'reblock', height: currentHeight }, '*' );
     window.addEventListener( 'resize', logDocHeight );
 }
