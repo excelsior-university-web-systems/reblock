@@ -36,7 +36,7 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
-= 1.0.1 (pending...) =
+= 1.0.1 (4/15/52025) =
 
 * Code refactoring to improve process and performance
 * Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes)
