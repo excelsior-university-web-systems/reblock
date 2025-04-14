@@ -28,7 +28,7 @@ add_action( 'init', __NAMESPACE__.'\\reblock_register_block_type' );
 function reblock_content_renderer( $attributes ) {
     
     $block_id = isset( $attributes['blockId'] ) ? $attributes['blockId'] : 0;
-    $inside_excelsior_bootstrap = isset( $attributes['isBootstrap'] ) ? $attributes['isBootstrap'] : false;
+    $inside_excelsior_bootstrap = isset( $attributes['hasExcelsiorBootstrap'] ) ? $attributes['hasExcelsiorBootstrap'] : false;
     
     if ( ! $block_id ) {
         return '';
