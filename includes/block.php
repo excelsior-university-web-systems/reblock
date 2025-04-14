@@ -29,7 +29,7 @@ function reblock_content_renderer( $attributes ) {
     
     $block_id = isset( $attributes['blockId'] ) ? (int) $attributes['blockId'] : 0;
     $inside_excelsior_bootstrap = !empty( $attributes['hasExcelsiorBootstrap'] );
-    $embed_as_iframe = !empty( $attributes['embedAsIframe'] );
+    $use_iframe = !empty( $attributes['useIframe'] );
     
     if ( ! $block_id ) {
         return '';
@@ -37,7 +37,7 @@ function reblock_content_renderer( $attributes ) {
 
     $post = get_post( $block_id );
 
-    if ( $embed_as_iframe && $post ) {
+    if ( $use_iframe && $post ) {
         $permalink = get_permalink( $post );
         return sprintf(
             '<iframe data-reblock="%d" style="width: 100%%; height: auto; overflow: hidden; border: none;" scrolling="no" src="%s"></iframe>',

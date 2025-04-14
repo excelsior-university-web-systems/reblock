@@ -8,7 +8,7 @@ import { pencil, update } from '@wordpress/icons';
 
 export default function edit( { attributes, setAttributes, clientId } ) {
 
-	const { blockId, blockTitle, hasExcelsiorBootstrap, embedAsIframe, metadata } = attributes;
+	const { blockId, blockTitle, hasExcelsiorBootstrap, useIframe, metadata } = attributes;
 
     const blockProps = useBlockProps({});
 
@@ -30,6 +30,19 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             return parentBlock?.name === 'excelsior-bootstrap-editor/container';
         } );
     }, [clientId] );
+
+    // check if Excelsior Bootstrap post type
+    // if yes, set useIframe to true and disable it
+    const isExcelsiorBootstrapPostType = useSelect( ( select ) => {
+        const postType = select( 'core/editor' )?.getCurrentPostType?.();
+        return postType === 'excelsior_bootstrap';
+    }, [] );
+    
+    useEffect( () => {
+        if ( isExcelsiorBootstrapPostType ) {
+            setAttributes( { useIframe: true } );
+        }
+    }, [ isExcelsiorBootstrapPostType ] );
 
     const fetchPosts = debounce( ( query ) => {
 
@@ -227,11 +240,16 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 />
                 <Spacer as='div' />
                 <ToggleControl 
-                    label='Embed as Iframe'oggspace
-                    checked={embedAsIframe}
+                    label='Embed via iFrame'
+                    checked={useIframe}
+                    disabled={isExcelsiorBootstrapPostType}
                     __nextHasNoMarginBottom
-                    onChange={(value) => setAttributes({ embedAsIframe: value })}
+                    onChange={(value) => setAttributes({ useIframe: value })}
                 />
+                
+                {isExcelsiorBootstrapPostType ? <Notice isDismissible={false} status='info'>
+                    ReBlock content can only be embedded as an iFrame for Excelsior Bootstrap.
+                </Notice> : (<></>) }
                 
             </PanelBody>
         </InspectorControls>
