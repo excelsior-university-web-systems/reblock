@@ -40,8 +40,9 @@ This section describes how to install the plugin and get it working.
 
 ### 1.0.1 (4/15/52025) ###
 
-* Code refactoring to improve process and performance
-* Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes)
+* Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes).
+* Add embed code and copy button to the Page Settings sidebar (for Public post only).
+* Other fixes and improvements.
 
 ### 1.0.0 (04/09/2025) ###
 

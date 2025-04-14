@@ -1,5 +1,5 @@
 import { useBlockProps, InspectorControls, BlockControls } from '@wordpress/block-editor';
-import { PanelBody, ComboboxControl, Notice, ToolbarGroup, ToolbarButton } from '@wordpress/components';
+import { PanelBody, ComboboxControl, Notice, ToolbarGroup, ToolbarButton, ToggleControl, __experimentalSpacer as Spacer } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { Fragment, useState, useEffect } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
@@ -8,7 +8,7 @@ import { pencil, update } from '@wordpress/icons';
 
 export default function edit( { attributes, setAttributes, clientId } ) {
 
-	const { blockId, blockTitle, hasExcelsiorBootstrap, metadata } = attributes;
+	const { blockId, blockTitle, hasExcelsiorBootstrap, embedAsIframe, metadata } = attributes;
 
     const blockProps = useBlockProps({});
 
@@ -225,6 +225,14 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                     __next40pxDefaultSize
                     __nextHasNoMarginBottom
                 />
+                <Spacer as='div' />
+                <ToggleControl 
+                    label='Embed as Iframe'oggspace
+                    checked={embedAsIframe}
+                    __nextHasNoMarginBottom
+                    onChange={(value) => setAttributes({ embedAsIframe: value })}
+                />
+                
             </PanelBody>
         </InspectorControls>
 		<div { ...blockProps }>

@@ -24,6 +24,10 @@
         "hasExcelsiorBootstrap": {
             "type": "boolean",
             "default": false
+        },
+        "embedAsIframe": {
+            "type": "boolean",
+            "default": false
         }
     },
     "editorScript": "file:./index.js",

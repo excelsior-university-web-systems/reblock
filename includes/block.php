@@ -27,14 +27,24 @@ add_action( 'init', __NAMESPACE__.'\\reblock_register_block_type' );
 
 function reblock_content_renderer( $attributes ) {
     
-    $block_id = isset( $attributes['blockId'] ) ? $attributes['blockId'] : 0;
-    $inside_excelsior_bootstrap = isset( $attributes['hasExcelsiorBootstrap'] ) ? $attributes['hasExcelsiorBootstrap'] : false;
+    $block_id = isset( $attributes['blockId'] ) ? (int) $attributes['blockId'] : 0;
+    $inside_excelsior_bootstrap = !empty( $attributes['hasExcelsiorBootstrap'] );
+    $embed_as_iframe = !empty( $attributes['embedAsIframe'] );
     
     if ( ! $block_id ) {
         return '';
     }
 
     $post = get_post( $block_id );
+
+    if ( $embed_as_iframe && $post ) {
+        $permalink = get_permalink( $post );
+        return sprintf(
+            '<iframe data-reblock="%d" style="width: 100%%; height: auto; overflow: hidden; border: none;" scrolling="no" src="%s"></iframe>',
+            $post->ID,
+            esc_url( $permalink )
+        );
+    }
 
     if ( $post && $post->post_type === REBLOCK_POST_TYPE_NAME ) {
 
