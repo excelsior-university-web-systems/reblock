@@ -6,6 +6,7 @@ module.exports = {
     entry: {
         ...defaultConfig.entry,
         'index': path.resolve( __dirname, 'src/index.js' ),
+        'reblock-sidebar': path.resolve( __dirname, 'src/reblock-sidebar.js' ),
         'reblock-single': path.resolve( __dirname, 'src/reblock-single.js' )
     },
     output: {

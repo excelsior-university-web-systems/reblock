@@ -53,18 +53,30 @@ function reblock_content_renderer( $attributes ) {
 function reblock_enqueue_block_editor_assets() {
     $screen = get_current_screen();
 
-    if ( $screen->post_type === REBLOCK_POST_TYPE_NAME && get_option( 'reblock_hash_slug_option', false ) ) {
-        $css = '
-            .editor-post-url > div:nth-of-type(2):not(.block-editor-inspector-popover-header) > div:first-of-type {
-                display: none !important;
-            }
-            .editor-post-url__input .components-base-control__field,
-            .editor-post-url__input input {
-                display: none !important;
-            }
-        ';
+    if ( $screen->post_type === REBLOCK_POST_TYPE_NAME ) {
 
-        wp_add_inline_style( 'reblock-reblock-block-selector-editor-style', $css );
+        if ( get_option( 'reblock_hash_slug_option', false ) ) {
+            $css = '
+                .editor-post-url > div:nth-of-type(2):not(.block-editor-inspector-popover-header) > div:first-of-type {
+                    display: none !important;
+                }
+                .editor-post-url__input .components-base-control__field,
+                .editor-post-url__input input {
+                    display: none !important;
+                }
+            ';
+    
+            wp_add_inline_style( 'reblock-reblock-block-selector-editor-style', $css );
+        }
+
+        wp_enqueue_script(
+            'reblock-sidebar',
+            plugin_dir_url(__FILE__) . '../build/reblock-sidebar.js',
+            ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'],
+            filemtime(__FILE__),
+            true
+        );
+
     }
 }
 
