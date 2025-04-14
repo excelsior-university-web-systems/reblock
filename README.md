@@ -26,7 +26,7 @@ This section describes how to install the plugin and get it working.
 
 ### Instructions ###
 
-1. Upload the reblock folder to the `/wp-content/plugins/` directory.
+1. Upload the `reblock` folder to the `/wp-content/plugins/` directory.
 1. Activate the plugin through the 'Plugins' menu in WordPress.
 1. Look for the ReBlock menu item in the admin menu.
 
@@ -42,6 +42,8 @@ This section describes how to install the plugin and get it working.
 
 * Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes).
 * Add embed code and copy button to the Page Settings sidebar (for Public post only).
+* Add a new "Embed via iFrame" toggle control to the ReBlock block settings to embed the ReBlock content in an iFrame.
+* Disable "Embed via iFrame" toggle when the post type is Excelsior Bootstrap (Editor), so that all ReBlock content is loaded via iFrame.
 * Other fixes and improvements.
 
 ### 1.0.0 (04/09/2025) ###
