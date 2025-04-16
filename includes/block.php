@@ -99,14 +99,14 @@ function modify_reblock_content( $content ) {
         return $content;
     }
 
-    // Load content into DOMDocument
     $dom = new \DOMDocument( '1.0', 'UTF-8' );
-    libxml_use_internal_errors( true ); // Suppress parsing errors
+    libxml_use_internal_errors( true );
 
-    $dom->loadHTML( $content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+    // Encode special characters as HTML entities to preserve them
+    $encodedContent = htmlentities( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+    $dom->loadHTML( $encodedContent, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
     libxml_clear_errors();
 
-    // Get the document body
     $xpath = new \DOMXPath( $dom );
 
     // Remove all comment nodes
@@ -114,31 +114,21 @@ function modify_reblock_content( $content ) {
         $comment->parentNode->removeChild( $comment );
     }
 
-    // Find div#excelsior-bootstrap
-    $bootstrapContainer = $xpath->query( '//div[@id="excelsior-bootstrap"]' )->item(0);
+    $bootstrapContainer = $xpath->query( '//div[@id="excelsior-bootstrap"]' )->item( 0 );
 
     if ( $bootstrapContainer ) {
-        // Find div.page-container inside it
         $pageContainer = $xpath->query( './/div[contains(@class, "page-container")]', $bootstrapContainer )->item( 0 );
 
         if ( $pageContainer ) {
-            // Move all children from .page-container to bootstrapContainer's parent
             while ( $pageContainer->firstChild ) {
                 $bootstrapContainer->parentNode->insertBefore( $pageContainer->firstChild, $bootstrapContainer );
             }
-
-            // Remove div.page-container
             $pageContainer->parentNode->removeChild( $pageContainer );
         }
 
-        // Remove div#excelsior-bootstrap
         $bootstrapContainer->parentNode->removeChild( $bootstrapContainer );
     }
 
-    // Get HTML output and remove any remaining comments
-    $htmlOutput = $dom->saveHTML();
-    $htmlOutput = preg_replace('/<!--(.*?)-->/', '', $htmlOutput); // Remove all comments
-
-    return $htmlOutput;
+    return html_entity_decode( $dom->saveHTML(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 }
 ?>
