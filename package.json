@@ -1,6 +1,6 @@
 {
   "name": "reblock",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A WordPress plugin that manages reusable content blocks.",
   "main": "build/index.js",
   "scripts": {

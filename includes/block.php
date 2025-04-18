@@ -3,6 +3,16 @@ namespace eslin87\ReBlock;
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
 
+/**
+ * Adds a custom block category for the ReBlock plugin in the block editor.
+ *
+ * - Prepends a new category specific to the ReBlock post type.
+ * - Uses the post type name as the slug and plugin name as the title.
+ *
+ * @param array $categories Existing block categories.
+ * @param WP_Post $post The current post being edited.
+ * @return array Modified list of block categories with ReBlock category added.
+ */
 function reblock_add_category( $categories, $post ) {
     return array_merge(
         array(
@@ -17,6 +27,14 @@ function reblock_add_category( $categories, $post ) {
 
 add_filter( 'block_categories_all', __NAMESPACE__.'\\reblock_add_category' , 10, 2 );
 
+/**
+ * Registers the ReBlock block type with a custom render callback.
+ *
+ * - Loads block registration from the compiled build directory.
+ * - Uses `reblock_content_renderer` to dynamically render block output.
+ *
+ * @return void
+ */
 function reblock_register_block_type() {
     register_block_type( plugin_dir_path( __FILE__ ) . '../build', array(
         'render_callback' => __NAMESPACE__.'\\reblock_content_renderer'
@@ -25,6 +43,16 @@ function reblock_register_block_type() {
 
 add_action( 'init', __NAMESPACE__.'\\reblock_register_block_type' );
 
+/**
+ * Renders the content of a ReBlock block based on its attributes.
+ *
+ * - Outputs an iframe if `useIframe` is true.
+ * - Otherwise, renders the post content directly.
+ * - Optionally processes the content through `modify_reblock_content` if wrapped in Excelsior Bootstrap.
+ *
+ * @param array $attributes Block attributes including `blockId`, `hasExcelsiorBootstrap`, and `useIframe`.
+ * @return string The rendered HTML output or an empty string if invalid.
+ */
 function reblock_content_renderer( $attributes ) {
     
     $block_id = isset( $attributes['blockId'] ) ? (int) $attributes['blockId'] : 0;
@@ -60,6 +88,15 @@ function reblock_content_renderer( $attributes ) {
     return '';
 }
 
+/**
+ * Enqueues block editor assets for the ReBlock post type.
+ *
+ * - Adds custom CSS to hide the slug field if slug hashing is enabled.
+ * - Enqueues a custom sidebar script for the ReBlock editor.
+ * - Applies only when editing posts of the ReBlock post type.
+ *
+ * @return void
+ */
 function reblock_enqueue_block_editor_assets() {
     $screen = get_current_screen();
 
@@ -94,6 +131,17 @@ add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\reblock_enqueue_bl
 
 /************ helpers ************/
 
+/**
+ * Cleans and modifies ReBlock content HTML before rendering.
+ *
+ * - Removes all HTML comment nodes.
+ * - Extracts inner content from the `.page-container` inside `#excelsior-bootstrap`.
+ * - Strips out the `#excelsior-bootstrap` wrapper and its children.
+ * - Handles encoding to preserve special characters during processing.
+ *
+ * @param string $content The original post content.
+ * @return string The cleaned and modified HTML content.
+ */
 function modify_reblock_content( $content ) {
     if ( empty( $content ) ) {
         return $content;

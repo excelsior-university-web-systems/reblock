@@ -3,6 +3,16 @@ namespace eslin87\ReBlock;
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
 
+/**
+ * Activates the ReBlock plugin and assigns capabilities.
+ *
+ * - Temporarily registers the ReBlock post type to retrieve its capabilities.
+ * - Grants all ReBlock capabilities to the administrator role.
+ * - Updates an option flag indicating that capabilities have been initialized.
+ * - Flushes rewrite rules to ensure proper permalink handling.
+ *
+ * @return void
+ */
 function reblock_activate_plugin() {
     if ( ! post_type_exists( REBLOCK_POST_TYPE_NAME ) ) {
         // Temporary register to get capabilities
@@ -33,13 +43,15 @@ function reblock_activate_plugin() {
 }
 
 /**
- * Registers the custom post type "ReBlock".
+ * Registers the ReBlock custom post type with configurable visibility and searchability.
  *
- * - Defines UI labels, capabilities, support features, and visibility settings.
- * - Assigns all post type capabilities to the administrator role.
- * - Enables block editor, revisions, and REST API support.
+ * - Determines public visibility and search inclusion via plugin options.
+ * - Sets post type labels dynamically using REBLOCK_PLUGIN_NAME.
+ * - Includes support for block editor features, revisions, and custom fields.
+ * - Uses a base64-encoded SVG icon as the menu icon.
+ * - Optionally starts new posts with Excelsior Bootstrap block template if enabled.
  *
- * @return void Registers the custom post type and assigns capabilities.
+ * @return void
  */
 function create_reblock_post_type() {
     $visibility     = get_option( 'reblock_is_public', true );
@@ -95,6 +107,15 @@ function create_reblock_post_type() {
     register_post_type( REBLOCK_POST_TYPE_NAME, $args );
 }
 
+/**
+ * Initializes the ReBlock plugin by registering the custom post type and assigning capabilities.
+ *
+ * - Checks if capabilities have been initialized; if not, calls activation logic.
+ * - Always registers the ReBlock custom post type.
+ * - Hooks into the WordPress 'init' action.
+ *
+ * @return void
+ */
 function reblock_initialize() {
     if ( ! get_option( 'reblock_caps_initialized' ) ) {
         reblock_activate_plugin();
@@ -106,13 +127,14 @@ function reblock_initialize() {
 add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
 
 /**
- * Loads a custom blank template for ReBlock single posts.
+ * Loads a custom blank template for Reblock single posts.
  *
- * - Applies only to singular posts of type ReBlock.
- * - Falls back to the default template if the custom one is not found.
+ * - Applies only to singular posts of the REBLOCK post type.
+ * - Returns the plugin-provided blank template if it exists.
+ * - Falls back to the default template otherwise.
  *
- * @param string $template The path to the default single post template.
- * @return string The path to the custom or default template.
+ * @param string $template The default single post template path.
+ * @return string The modified or original template path.
  */
 function reblock_blank_single_template( $template ) {
     if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
@@ -128,12 +150,13 @@ function reblock_blank_single_template( $template ) {
 add_filter( 'single_template', __NAMESPACE__.'\\reblock_blank_single_template', 11 );
 
 /**
- * Removes all enqueued styles and scripts on ReBlock pages except for allowed ones.
+ * Removes all styles and scripts on ReBlock single posts except allowed ones and enqueues the ReBlock frontend script.
  *
- * - Applies only to singular pages of ReBlock post type.
- * - Respects user-defined allowed handles via the 'reblock_allowed_styles_scripts' option.
- * - Honors options for admin bar visibility and global styles.
- * - Retains Excelsior Bootstrap assets if supported.
+ * - Registers and enqueues the `reblock-single` script from the build directory.
+ * - Passes the current post ID to JavaScript via `wp_localize_script`.
+ * - Retains required assets such as global styles, Excelsior Bootstrap, and allowed user-defined handles.
+ * - Optionally disables the WordPress admin bar and its associated styles.
+ * - Dequeues all non-allowed styles and scripts for a clean front-end rendering.
  *
  * @return void
  */
@@ -218,7 +241,12 @@ function reblock_remove_all_styles_and_scripts() {
 add_action( 'wp_enqueue_scripts', __NAMESPACE__.'\\reblock_remove_all_styles_and_scripts', 99 );
 
 /**
- * Generates a hashed slug for ReBlock posts if slug hashing is enabled.
+ * Generates a hashed slug for new ReBlock posts if slug hashing is enabled.
+ *
+ * - Applies only to posts of the REBLOCK post type.
+ * - Checks the plugin option `reblock_hash_slug_option` before applying.
+ * - For new posts, generates a unique slug using microtime and a random password.
+ * - Hashes the base string using MD5 to ensure a unique, fixed-length slug.
  *
  * @param array $data    Sanitized post data.
  * @param array $postarr Raw post data.
@@ -305,6 +333,17 @@ function reblock_disable_slug_in_quick_edit() {
 
 add_action( 'admin_footer', __NAMESPACE__.'\\reblock_disable_slug_in_quick_edit' );
 
+/**
+ * Excludes ReBlock posts from frontend search results if the setting is enabled.
+ *
+ * - Applies only to the main search query on the frontend.
+ * - Checks the `reblock_is_searchable` option before excluding.
+ * - Removes REBLOCK_POST_TYPE_NAME from the search query.
+ * - Prevents any ReBlock results by setting a dummy post type if it's the only one.
+ *
+ * @param WP_Query $query The current WordPress query object.
+ * @return void
+ */
 function reblock_exclude_from_search( $query ) {
     if ( $query->is_search() && ! is_admin() && $query->is_main_query() && !get_option( 'reblock_is_searchable', false ) ) {
         $post_type = $query->get( 'post_type' );

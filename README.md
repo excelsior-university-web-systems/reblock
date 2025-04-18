@@ -5,7 +5,7 @@
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
 **Tested up to:** 6.8  
-**Stable tag:** 1.0.1  
+**Stable tag:** 1.0.2  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -38,7 +38,12 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
-### 1.0.1 (4/15/52025) ###
+### 1.0.2 ###
+
+* Fix HTML character encodings for ReBlock content that uses an Excelsior Bootstrap container and is inserted into another Excelsior Bootstrap container.
+* Minor fixes and improvements.
+
+### 1.0.1 (4/16/52025) ###
 
 * Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes).
 * Add embed code and copy button to the Page Settings sidebar (for Public post only).
