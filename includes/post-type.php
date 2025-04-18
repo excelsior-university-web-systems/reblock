@@ -205,21 +205,34 @@ add_filter( 'manage_edit-reblock_columns', __NAMESPACE__.'\\reblock_reorder_colu
 add_filter( 'manage_reblock_posts_columns', __NAMESPACE__.'\\reblock_reorder_columns', 20 );
 
 /**
- * Adds a category dropdown filter to the ReBlock admin list screen.
+ * Adds a secure category filter dropdown to the ReBlock admin post list.
  *
  * - Applies only to the ReBlock post type screen.
- * - Allows filtering posts by custom taxonomy in the admin UI.
+ * - Uses a nonce for validation to ensure safe input handling.
+ * - Allows filtering by assigned or unassigned categories.
  *
+ * @param string $post_type The current post type.
  * @return void
  */
-function reblock_add_category_filter() {
-    global $typenow;
-    if ( $typenow !== REBLOCK_POST_TYPE_NAME ) {
+function reblock_add_category_filter( $post_type ) {
+    if ( $post_type !== REBLOCK_POST_TYPE_NAME ) {
         return;
     }
 
+    wp_nonce_field( 'reblock_category_filter_action', 'reblock_category_filter_nonce', false, true );
+
     $taxonomy = REBLOCK_POST_TYPE_NAME . '_category';
-    $selected = isset( $_GET[ $taxonomy ] ) ? $_GET[ $taxonomy ] : '';
+    $selected = '';
+
+    if ( isset( $_REQUEST['reblock_category_filter_nonce'] ) && wp_verify_nonce(
+           sanitize_key( wp_unslash( $_REQUEST['reblock_category_filter_nonce'] ) ),
+           'reblock_category_filter_action'
+         )
+    ) {
+        $selected = isset( $_GET[ $taxonomy ] )
+             ? sanitize_text_field( wp_unslash( $_GET[ $taxonomy ] ) )
+             : '';
+    }
 
     wp_dropdown_categories( array(
         'show_option_all' => __( 'All Categories', 'reblock' ),
@@ -234,50 +247,62 @@ function reblock_add_category_filter() {
     ) );
 }
 
-add_action( 'restrict_manage_posts', __NAMESPACE__.'\\reblock_add_category_filter', 1 );
+add_action( 'restrict_manage_posts', __NAMESPACE__.'\\reblock_add_category_filter' );
 
 /**
- * Filters ReBlock posts in the admin list by selected category.
+ * Applies category filtering to ReBlock posts in the admin list view.
  *
+ * - Validates the filter using a nonce for security.
  * - Applies only on the ReBlock post type edit screen.
- * - Supports filtering by a selected term or showing posts without any category.
- * - Uses `tax_query` to modify the main query based on the selected filter.
+ * - Supports filtering by specific category term or posts without any category.
+ * - Modifies the main query via a `tax_query`.
  *
  * @param WP_Query $query The current query object.
  * @return void
  */
 function reblock_filter_posts_by_category( $query ) {
     global $pagenow;
-    $post_type = REBLOCK_POST_TYPE_NAME;
-    $taxonomy  = $post_type . '_category';
+    
+    if ( $pagenow !== 'edit.php' || $query->get( 'post_type' ) !== REBLOCK_POST_TYPE_NAME ) {
+        return;
+    }
 
-    if ( $pagenow === 'edit.php' && $query->get( 'post_type' ) === $post_type && isset( $_GET[ $taxonomy ] )
-      && $_GET[ $taxonomy ] !== ''
-      && $_GET[ $taxonomy ] !== '0'
+    if ( empty( $_REQUEST['reblock_category_filter_nonce'] ) || ! wp_verify_nonce(
+            sanitize_key( wp_unslash( $_REQUEST['reblock_category_filter_nonce'] ) ),
+            'reblock_category_filter_action'
+        )
     ) {
-        $value = $_GET[ $taxonomy ];
+        return;
+    }
 
-        if ( $value === 'none' ) {
-            // posts that have NO term in this taxonomy
-            $query->set( 'tax_query', array( array(
-                'taxonomy' => $taxonomy,
-                'operator' => 'NOT EXISTS',
-            ) ) );
-        } elseif ( is_numeric( $value ) ) {
-            // posts in the selected term
-            $query->set( 'tax_query', array( array(
-                'taxonomy' => $taxonomy,
-                'field'    => 'term_id',
-                'terms'    => intval( $value ),
-            ) ) );
-        }
+    $taxonomy = REBLOCK_POST_TYPE_NAME . '_category';
+    $value    = isset( $_GET[ $taxonomy ] ) ? sanitize_text_field( wp_unslash( $_GET[ $taxonomy ] ) ) : '';
+
+    if ( '' === $value || '0' === $value ) {
+        return;
+    }
+
+    if ( 'none' === $value ) {
+        $query->set( 'tax_query', array( array(
+            'taxonomy' => $taxonomy,
+            'operator' => 'NOT EXISTS',
+        ) ) );
+        return;
+    }
+
+    if ( is_numeric( $value ) && intval( $value ) > 0 ) {
+        $query->set( 'tax_query', array( array(
+            'taxonomy' => $taxonomy,
+            'field'    => 'term_id',
+            'terms'    => intval( $value ),
+        ) ) );
     }
 }
 
 add_filter( 'parse_query', __NAMESPACE__.'\\reblock_filter_posts_by_category' );
 
 /**
- * Loads a custom blank template for Reblock single posts.
+ * Loads a custom blank template for ReBlock single posts.
  *
  * - Applies only to singular posts of the REBLOCK post type.
  * - Returns the plugin-provided blank template if it exists.
