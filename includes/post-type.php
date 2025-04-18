@@ -43,13 +43,14 @@ function reblock_activate_plugin() {
 }
 
 /**
- * Registers the ReBlock custom post type with configurable visibility and searchability.
+ * Registers the ReBlock custom post type with dynamic visibility and searchability.
  *
- * - Determines public visibility and search inclusion via plugin options.
- * - Sets post type labels dynamically using REBLOCK_PLUGIN_NAME.
- * - Includes support for block editor features, revisions, and custom fields.
- * - Uses a base64-encoded SVG icon as the menu icon.
- * - Optionally starts new posts with Excelsior Bootstrap block template if enabled.
+ * - Public visibility and search inclusion are determined by plugin options.
+ * - Configures post type labels using REBLOCK_PLUGIN_NAME.
+ * - Supports title, editor, author, revisions, and custom fields.
+ * - Includes a custom SVG icon for the admin menu.
+ * - Initializes a default block template with Excelsior Bootstrap if enabled.
+ * - Registers an associated taxonomy via `reblock_register_category_taxonomy()`.
  *
  * @return void
  */
@@ -105,6 +106,52 @@ function create_reblock_post_type() {
     }
 
     register_post_type( REBLOCK_POST_TYPE_NAME, $args );
+    reblock_register_category_taxonomy();
+}
+
+/**
+ * Registers a hierarchical category taxonomy for the ReBlock post type.
+ *
+ * - Provides UI support in the WordPress admin for assigning categories.
+ * - Does not expose the taxonomy publicly or in nav menus.
+ * - Enables REST API support for block editor integration.
+ *
+ * @return void
+ */
+function reblock_register_category_taxonomy() {
+
+    $labels = array(
+        'name'              => _x( 'Categories', 'taxonomy general name', 'reblock' ),
+        'singular_name'     => _x( 'Category', 'taxonomy singular name', 'reblock' ),
+        'search_items'      => __( 'Search Categories', 'reblock' ),
+        'all_items'         => __( 'All Categories', 'reblock' ),
+        'parent_item'       => __( 'Parent Category', 'reblock' ),
+        'parent_item_colon' => __( 'Parent Category:', 'reblock' ),
+        'edit_item'         => __( 'Edit Category', 'reblock' ),
+        'update_item'       => __( 'Update Category', 'reblock' ),
+        'add_new_item'      => __( 'Add New Category', 'reblock' ),
+        'new_item_name'     => __( 'New Category Name', 'reblock' ),
+        'menu_name'         => __( 'Categories', 'reblock' ),
+    );
+    
+    $args = array(
+        'hierarchical'      => true,
+        'labels'            => $labels,
+        'public'            => false,
+        'show_ui'           => true,
+        'show_admin_column' => true,
+        'show_in_nav_menus' => false, 
+        'query_var'         => false,
+        'rewrite'           => false,
+        'show_in_rest'      => true
+    );
+    
+    register_taxonomy(
+        REBLOCK_POST_TYPE_NAME.'_category',
+        array( REBLOCK_POST_TYPE_NAME ),
+        $args
+    );
+
 }
 
 /**
@@ -125,6 +172,109 @@ function reblock_initialize() {
 }
 
 add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
+
+/**
+ * Reorders the category column in the ReBlock admin post list table.
+ *
+ * - Moves the custom taxonomy column to appear before the "Author" column.
+ * - Ensures the column is only reordered if it exists.
+ *
+ * @param array $columns The original array of admin post table columns.
+ * @return array The reordered columns array.
+ */
+function reblock_reorder_columns( $columns ) {
+    if ( ! isset( $columns['taxonomy-'.REBLOCK_POST_TYPE_NAME.'_category'] ) ) {
+        return $columns;
+    }
+
+    $cat_label = $columns['taxonomy-'.REBLOCK_POST_TYPE_NAME.'_category'];
+    unset( $columns['taxonomy-'.REBLOCK_POST_TYPE_NAME.'_category'] );
+
+    $new_columns = [];
+    foreach ( $columns as $key => $label ) {
+        if ( 'author' === $key ) {
+            $new_columns['taxonomy-'.REBLOCK_POST_TYPE_NAME.'_category'] = $cat_label;
+        }
+        $new_columns[ $key ] = $label;
+    }
+    
+    return $new_columns;
+}
+
+add_filter( 'manage_edit-reblock_columns', __NAMESPACE__.'\\reblock_reorder_columns', 20 );
+add_filter( 'manage_reblock_posts_columns', __NAMESPACE__.'\\reblock_reorder_columns', 20 );
+
+/**
+ * Adds a category dropdown filter to the ReBlock admin list screen.
+ *
+ * - Applies only to the ReBlock post type screen.
+ * - Allows filtering posts by custom taxonomy in the admin UI.
+ *
+ * @return void
+ */
+function reblock_add_category_filter() {
+    global $typenow;
+    if ( $typenow !== REBLOCK_POST_TYPE_NAME ) {
+        return;
+    }
+
+    $taxonomy = REBLOCK_POST_TYPE_NAME . '_category';
+    $selected = isset( $_GET[ $taxonomy ] ) ? $_GET[ $taxonomy ] : '';
+
+    wp_dropdown_categories( array(
+        'show_option_all' => __( 'All Categories', 'reblock' ),
+        'show_option_none'  => __( 'No Categories',  'reblock' ),
+        'option_none_value' => 'none',
+        'taxonomy'        => $taxonomy,
+        'name'            => $taxonomy,
+        'orderby'         => 'name',
+        'selected'        => $selected,
+        'show_count'      => false,
+        'hide_empty'      => true,
+    ) );
+}
+
+add_action( 'restrict_manage_posts', __NAMESPACE__.'\\reblock_add_category_filter', 1 );
+
+/**
+ * Filters ReBlock posts in the admin list by selected category.
+ *
+ * - Applies only on the ReBlock post type edit screen.
+ * - Supports filtering by a selected term or showing posts without any category.
+ * - Uses `tax_query` to modify the main query based on the selected filter.
+ *
+ * @param WP_Query $query The current query object.
+ * @return void
+ */
+function reblock_filter_posts_by_category( $query ) {
+    global $pagenow;
+    $post_type = REBLOCK_POST_TYPE_NAME;
+    $taxonomy  = $post_type . '_category';
+
+    if ( $pagenow === 'edit.php' && $query->get( 'post_type' ) === $post_type && isset( $_GET[ $taxonomy ] )
+      && $_GET[ $taxonomy ] !== ''
+      && $_GET[ $taxonomy ] !== '0'
+    ) {
+        $value = $_GET[ $taxonomy ];
+
+        if ( $value === 'none' ) {
+            // posts that have NO term in this taxonomy
+            $query->set( 'tax_query', array( array(
+                'taxonomy' => $taxonomy,
+                'operator' => 'NOT EXISTS',
+            ) ) );
+        } elseif ( is_numeric( $value ) ) {
+            // posts in the selected term
+            $query->set( 'tax_query', array( array(
+                'taxonomy' => $taxonomy,
+                'field'    => 'term_id',
+                'terms'    => intval( $value ),
+            ) ) );
+        }
+    }
+}
+
+add_filter( 'parse_query', __NAMESPACE__.'\\reblock_filter_posts_by_category' );
 
 /**
  * Loads a custom blank template for Reblock single posts.

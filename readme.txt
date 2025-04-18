@@ -36,12 +36,16 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
-= 1.0.2 =
+= 1.1.0 (04/23/2025) =
+
+* Add Categories taxonomy.
+
+= 1.0.2 (pre-release) =
 
 * Fix HTML character encodings for ReBlock content that uses an Excelsior Bootstrap container and is inserted into another Excelsior Bootstrap container.
 * Minor fixes and improvements.
 
-= 1.0.1 (4/16/52025) =
+= 1.0.1 (04/16/2025) =
 
 * Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes).
 * Add embed code and copy button to the Page Settings sidebar (for Public post only).
