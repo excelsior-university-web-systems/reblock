@@ -5,7 +5,7 @@
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
 **Tested up to:** 6.8  
-**Stable tag:** 1.0.2  
+**Stable tag:** 1.1.0  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -13,7 +13,7 @@ ReBlock creates a centralized content hub to efficiently manage common reusable 
 
 ## Description ##
 
-ReBlock creates a centralized content hub that efficiently organizes, edits, and hosts common and reused content down to individual blocks of content. This hub allows instructional designers, media strategists, and technologists to manage and deploy content across multiple platforms, ensuring consistency, quality, and accessibility.
+ReBlock creates a centralized content hub that efficiently organizes, edits, and hosts common and reused content down to individual blocks of content. This hub allows users to manage and deploy content across other post types or platforms, ensuring consistency, quality, and accessibility.
 
 ## Installation ##
 
@@ -41,6 +41,8 @@ This section describes how to install the plugin and get it working.
 ### 1.1.0 (04/23/2025) ###
 
 * Add Categories taxonomy.
+* Now tracks where ReBlock blocks are being used.
+* Display ReBlock usage information (where it is being used) in the ReBlock post editor.
 
 ### 1.0.2 (pre-release) ###
 
