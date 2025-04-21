@@ -15,7 +15,6 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const [ post, setPost ] = useState(null);
     const [ refreshKey, setRefreshKey ] = useState(0);
     const [ error, setError ] = useState( null );
-    const [ hasExclusions, setHasExclusions ] = useState( false );
     const [ options, setOptions ] = useState( [{value: blockId, label: blockTitle}] );
     const [ selectedOption, setSelectedOption ] = useState( blockId );
     const [ searchQuery, setSearchQuery ] = useState('');
@@ -52,46 +51,54 @@ export default function edit( { attributes, setAttributes, clientId } ) {
         }
     }, [ isExcelsiorBootstrapPostType ] );
 
+    const fetchDeepExcludedIds = async ( initialIds ) => {
+        const visited = new Set();
+        const toVisit = [ ...initialIds ];
+    
+        while ( toVisit.length > 0 ) {
+            const currentId = toVisit.pop();
+    
+            if ( visited.has( currentId ) ) {
+                continue;
+            }
+    
+            visited.add( currentId );
+    
+            try {
+                const post = await apiFetch( { path: `/wp/v2/reblock/${currentId}` } );
+    
+                const nestedMeta = post.meta?._reblock_used_in ?? [];
+                const nestedRefs = nestedMeta.filter( ref => ref.type === 'reblock' ).map( ref => ref.id );
+    
+                for ( const refId of nestedRefs ) {
+                    if ( !visited.has( refId ) ) {
+                        toVisit.push( refId );
+                    }
+                }
+            } catch ( error ) {
+                console.warn( `Failed to load ReBlock ${currentId}`, error );
+            }
+        }
+        return Array.from( visited );
+    };    
+
     const fetchPosts = debounce( async ( query ) => {
 
         const currentPostType = wp.data.select('core/editor').getCurrentPostType();
         let searchPath = `/wp/v2/reblock?search=${query}&per_page=10&status=publish`;
-        let excludeIds = [];
-
-        if ( currentPostType == 'reblock' ) {
-            // exclude current post ID or itself (can not insert itself to itself)
+        
+        if ( currentPostType === 'reblock' ) {
             const currentPostId = wp.data.select('core/editor').getCurrentPostId();
-
-            excludeIds.push( currentPostId );
-
-            // Exclude directly referenced ReBlocks (no infinite loop)
-            usedInReBlock.forEach( item => {
-                excludeIds.push( item.id );
-                setHasExclusions( true );
-            } );
-
-            // exclude nested ReBlock (no indirect infinite loop)
-            const nestedExcludePromises = usedInReBlock.map( item => {
-                return apiFetch( { path: `/wp/v2/reblock/${item.id}` } );
-            } );
-
-            try {
-                const nestedPosts = await Promise.all( nestedExcludePromises );
     
-                nestedPosts.forEach( post => {
-                    const nestedMeta = post.meta?._reblock_used_in ?? [];
-                    nestedMeta
-                        .filter( ref => ref.type === 'reblock' )
-                        .forEach( ref => {
-                            excludeIds.push( ref.id );
-                        } );
-                });
-            } catch ( error ) {
-                console.warn('Error loading nested ReBlock references:', error);
-            }
+            const initialIds = [ currentPostId ];
 
-            const uniqueExcludeIds = [ ...new Set( excludeIds ) ];
-            searchPath += `&exclude=${ uniqueExcludeIds.join(',') }`;
+            usedInReBlock.forEach( item => {
+                initialIds.push( item.id );
+            } );
+    
+            const excludeIds = await fetchDeepExcludedIds( initialIds );
+    
+            searchPath += `&exclude=${ excludeIds.join(',') }`;
         }
 
         apiFetch( { path: searchPath } )
@@ -265,6 +272,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             <PanelBody title='ReBlock Settings'>
                 <ComboboxControl
                     label="ReBlock"
+                    help='To prevent direct or indirect circular references (i.e., infinite loops), ReBlock posts that reference this current ReBlock post are excluded from search.'
                     value={selectedOption}
                     onChange={onComboboxChange}
                     onFilterValueChange={handleInputChange}
@@ -281,16 +289,21 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 <Spacer as='div' />
                 <ToggleControl 
                     label='Embed via iFrame'
+                    help={
+                        !isExcelsiorBootstrapPostType &&
+                        'Toggle on to show this ReBlock content outside WordPress, or to allow circular references (rare occurrence).'
+                    }
                     checked={useIframe}
                     disabled={isExcelsiorBootstrapPostType}
                     __nextHasNoMarginBottom
                     onChange={(value) => setAttributes({ useIframe: value })}
                 />
                 
-                {isExcelsiorBootstrapPostType ? <Notice isDismissible={false} status='info'>
-                    ReBlock content can only be embedded as an iFrame for Excelsior Bootstrap.
-                </Notice> : (<></>) }
-                
+                {isExcelsiorBootstrapPostType && (
+                    <Notice isDismissible={false} status="info">
+                        ReBlock can only be embedded as an iFrame for Excelsior Bootstrap.
+                    </Notice>
+                ) }
             </PanelBody>
         </InspectorControls>
 		<div { ...blockProps }>
@@ -299,15 +312,12 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             ) : post ? (
                 <div dangerouslySetInnerHTML={{ __html: post.content.rendered }} />
             ) : (
-
                 blockId === 0 ? (
                     <div className='reblock-select'>
-                        { hasExclusions ? 
-                            <Notice>Some ReBlock posts are excluded because it directly or indirectly refereced this current ReBlock. Those posts are excluded because to avoid direct or indirect infinite loops.</Notice>
-                        : (<></>)}
                         <ComboboxControl
                             className='editor-combobox'
                             label="ReBlock"
+                            help='To prevent direct or indirect circular references (i.e., infinite loops), ReBlock posts that reference this current ReBlock post are excluded from search.'
                             value={selectedOption}
                             onChange={onComboboxChange}
                             onFilterValueChange={handleInputChange}
