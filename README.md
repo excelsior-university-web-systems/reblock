@@ -43,6 +43,7 @@ This section describes how to install the plugin and get it working.
 * Add Categories taxonomy.
 * Now tracks where ReBlock blocks are being used.
 * Display ReBlock usage information (where it is being used) in the ReBlock post editor.
+* The ReBlock's input field no longer returns posts that directly or indirectly nested the current ReBlock post. This is to prevent circular references (infinite loops).
 
 ### 1.0.2 (pre-release) ###
 
