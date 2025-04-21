@@ -15,6 +15,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const [ post, setPost ] = useState(null);
     const [ refreshKey, setRefreshKey ] = useState(0);
     const [ error, setError ] = useState( null );
+    const [ hasExclusions, setHasExclusions ] = useState( false );
     const [ options, setOptions ] = useState( [{value: blockId, label: blockTitle}] );
     const [ selectedOption, setSelectedOption ] = useState( blockId );
     const [ searchQuery, setSearchQuery ] = useState('');
@@ -38,20 +39,59 @@ export default function edit( { attributes, setAttributes, clientId } ) {
         return postType === 'excelsior_bootstrap';
     }, [] );
     
+    const meta = useSelect(
+        ( select ) => select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {},
+        []
+    );
+    const usedIn = Array.isArray( meta._reblock_used_in ) ? meta._reblock_used_in : [];
+    const usedInReBlock = usedIn.filter( ( item ) => item.type == 'reblock' );
+
     useEffect( () => {
         if ( isExcelsiorBootstrapPostType ) {
             setAttributes( { useIframe: true } );
         }
     }, [ isExcelsiorBootstrapPostType ] );
 
-    const fetchPosts = debounce( ( query ) => {
+    const fetchPosts = debounce( async ( query ) => {
 
         const currentPostType = wp.data.select('core/editor').getCurrentPostType();
         let searchPath = `/wp/v2/reblock?search=${query}&per_page=10&status=publish`;
+        let excludeIds = [];
 
         if ( currentPostType == 'reblock' ) {
+            // exclude current post ID or itself (can not insert itself to itself)
             const currentPostId = wp.data.select('core/editor').getCurrentPostId();
-            searchPath += `&exclude=${ currentPostId }`;
+
+            excludeIds.push( currentPostId );
+
+            // Exclude directly referenced ReBlocks (no infinite loop)
+            usedInReBlock.forEach( item => {
+                excludeIds.push( item.id );
+                setHasExclusions( true );
+            } );
+
+            // exclude nested ReBlock (no indirect infinite loop)
+            const nestedExcludePromises = usedInReBlock.map( item => {
+                return apiFetch( { path: `/wp/v2/reblock/${item.id}` } );
+            } );
+
+            try {
+                const nestedPosts = await Promise.all( nestedExcludePromises );
+    
+                nestedPosts.forEach( post => {
+                    const nestedMeta = post.meta?._reblock_used_in ?? [];
+                    nestedMeta
+                        .filter( ref => ref.type === 'reblock' )
+                        .forEach( ref => {
+                            excludeIds.push( ref.id );
+                        } );
+                });
+            } catch ( error ) {
+                console.warn('Error loading nested ReBlock references:', error);
+            }
+
+            const uniqueExcludeIds = [ ...new Set( excludeIds ) ];
+            searchPath += `&exclude=${ uniqueExcludeIds.join(',') }`;
         }
 
         apiFetch( { path: searchPath } )
@@ -66,7 +106,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             .catch( ( error ) => {
                 setError( 'Failed to search ReBlock. ' + error.message );
             } );
-    }, 750 ); // Debounce the search with a 500ms delay
+    }, 500 ); // Debounce the search with a 500ms delay
 
     useEffect(() => {
         if ( !blockId ) {
@@ -262,22 +302,25 @@ export default function edit( { attributes, setAttributes, clientId } ) {
 
                 blockId === 0 ? (
                     <div className='reblock-select'>
-                    <ComboboxControl
-                        className='editor-combobox'
-                        label="ReBlock"
-                        value={selectedOption}
-                        onChange={onComboboxChange}
-                        onFilterValueChange={handleInputChange}
-                        options={options}
-                        renderItem={ (item) => (
-                            <span>{item.label}</span>
-                        )}
-                        __next40pxDefaultSize
-                        __nextHasNoMarginBottom
-                        placeholder="Search"
-                        allowReset={false}
-                        expandOnFocus={false}
-                    />
+                        { hasExclusions ? 
+                            <Notice>Some ReBlock posts are excluded because it directly or indirectly refereced this current ReBlock. Those posts are excluded because to avoid direct or indirect infinite loops.</Notice>
+                        : (<></>)}
+                        <ComboboxControl
+                            className='editor-combobox'
+                            label="ReBlock"
+                            value={selectedOption}
+                            onChange={onComboboxChange}
+                            onFilterValueChange={handleInputChange}
+                            options={options}
+                            renderItem={ (item) => (
+                                <span>{item.label}</span>
+                            )}
+                            __next40pxDefaultSize
+                            __nextHasNoMarginBottom
+                            placeholder="Search"
+                            allowReset={false}
+                            expandOnFocus={false}
+                        />
                     </div>
                 ) : (
                     <div className='loading-message'><span class="loader"></span> Loading...</div>
