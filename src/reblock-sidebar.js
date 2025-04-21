@@ -80,7 +80,7 @@ const ReBlockUsageTrackerPanel = () => {
                     ) ) }
                 </ul>
                 <Notice status='warning' __unstableHTML={true} isDismissible={false}>
-                    <strong>Warning:</strong> This list excludes any instances of the ReBlock content that have been embedded via iframe on external websites Updates to this ReBlock will still propagate to those external iframe embeds.
+                    <strong>Warning:</strong> This list excludes any instances of the ReBlock content that have been embedded via iframe on external websites. Updates to this ReBlock will still propagate to those external iframe embeds.
                 </Notice>
                 </>
             ) }
