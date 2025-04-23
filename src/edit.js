@@ -38,20 +38,67 @@ export default function edit( { attributes, setAttributes, clientId } ) {
         return postType === 'excelsior_bootstrap';
     }, [] );
     
+    const meta = useSelect(
+        ( select ) => select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {},
+        []
+    );
+    const usedIn = Array.isArray( meta._reblock_used_in ) ? meta._reblock_used_in : [];
+    const usedInReBlock = usedIn.filter( ( item ) => item.type == 'reblock' );
+
     useEffect( () => {
         if ( isExcelsiorBootstrapPostType ) {
             setAttributes( { useIframe: true } );
         }
     }, [ isExcelsiorBootstrapPostType ] );
 
-    const fetchPosts = debounce( ( query ) => {
+    const fetchDeepExcludedIds = async ( initialIds ) => {
+        const visited = new Set();
+        const toVisit = [ ...initialIds ];
+    
+        while ( toVisit.length > 0 ) {
+            const currentId = toVisit.pop();
+    
+            if ( visited.has( currentId ) ) {
+                continue;
+            }
+    
+            visited.add( currentId );
+    
+            try {
+                const post = await apiFetch( { path: `/wp/v2/reblock/${currentId}` } );
+    
+                const nestedMeta = post.meta?._reblock_used_in ?? [];
+                const nestedRefs = nestedMeta.filter( ref => ref.type === 'reblock' ).map( ref => ref.id );
+    
+                for ( const refId of nestedRefs ) {
+                    if ( !visited.has( refId ) ) {
+                        toVisit.push( refId );
+                    }
+                }
+            } catch ( error ) {
+                console.warn( `Failed to load ReBlock ${currentId}`, error );
+            }
+        }
+        return Array.from( visited );
+    };    
+
+    const fetchPosts = debounce( async ( query ) => {
 
         const currentPostType = wp.data.select('core/editor').getCurrentPostType();
         let searchPath = `/wp/v2/reblock?search=${query}&per_page=10&status=publish`;
-
-        if ( currentPostType == 'reblock' ) {
+        
+        if ( currentPostType === 'reblock' ) {
             const currentPostId = wp.data.select('core/editor').getCurrentPostId();
-            searchPath += `&exclude=${ currentPostId }`;
+    
+            const initialIds = [ currentPostId ];
+
+            usedInReBlock.forEach( item => {
+                initialIds.push( item.id );
+            } );
+    
+            const excludeIds = await fetchDeepExcludedIds( initialIds );
+    
+            searchPath += `&exclude=${ excludeIds.join(',') }`;
         }
 
         apiFetch( { path: searchPath } )
@@ -66,7 +113,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             .catch( ( error ) => {
                 setError( 'Failed to search ReBlock. ' + error.message );
             } );
-    }, 750 ); // Debounce the search with a 500ms delay
+    }, 500 ); // Debounce the search with a 500ms delay
 
     useEffect(() => {
         if ( !blockId ) {
@@ -225,6 +272,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             <PanelBody title='ReBlock Settings'>
                 <ComboboxControl
                     label="ReBlock"
+                    help='To prevent direct or indirect circular references (i.e., infinite loops), ReBlock posts that reference this current ReBlock post are excluded from search.'
                     value={selectedOption}
                     onChange={onComboboxChange}
                     onFilterValueChange={handleInputChange}
@@ -241,16 +289,21 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 <Spacer as='div' />
                 <ToggleControl 
                     label='Embed via iFrame'
+                    help={
+                        !isExcelsiorBootstrapPostType &&
+                        'Toggle on to show this ReBlock content outside WordPress, or to allow circular references (rare occurrence).'
+                    }
                     checked={useIframe}
                     disabled={isExcelsiorBootstrapPostType}
                     __nextHasNoMarginBottom
                     onChange={(value) => setAttributes({ useIframe: value })}
                 />
                 
-                {isExcelsiorBootstrapPostType ? <Notice isDismissible={false} status='info'>
-                    ReBlock content can only be embedded as an iFrame for Excelsior Bootstrap.
-                </Notice> : (<></>) }
-                
+                {isExcelsiorBootstrapPostType && (
+                    <Notice isDismissible={false} status="info">
+                        ReBlock can only be embedded as an iFrame for Excelsior Bootstrap.
+                    </Notice>
+                ) }
             </PanelBody>
         </InspectorControls>
 		<div { ...blockProps }>
@@ -259,25 +312,25 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             ) : post ? (
                 <div dangerouslySetInnerHTML={{ __html: post.content.rendered }} />
             ) : (
-
                 blockId === 0 ? (
                     <div className='reblock-select'>
-                    <ComboboxControl
-                        className='editor-combobox'
-                        label="ReBlock"
-                        value={selectedOption}
-                        onChange={onComboboxChange}
-                        onFilterValueChange={handleInputChange}
-                        options={options}
-                        renderItem={ (item) => (
-                            <span>{item.label}</span>
-                        )}
-                        __next40pxDefaultSize
-                        __nextHasNoMarginBottom
-                        placeholder="Search"
-                        allowReset={false}
-                        expandOnFocus={false}
-                    />
+                        <ComboboxControl
+                            className='editor-combobox'
+                            label="ReBlock"
+                            help='To prevent direct or indirect circular references (i.e., infinite loops), ReBlock posts that reference this current ReBlock post are excluded from search.'
+                            value={selectedOption}
+                            onChange={onComboboxChange}
+                            onFilterValueChange={handleInputChange}
+                            options={options}
+                            renderItem={ (item) => (
+                                <span>{item.label}</span>
+                            )}
+                            __next40pxDefaultSize
+                            __nextHasNoMarginBottom
+                            placeholder="Search"
+                            allowReset={false}
+                            expandOnFocus={false}
+                        />
                     </div>
                 ) : (
                     <div className='loading-message'><span class="loader"></span> Loading...</div>

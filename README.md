@@ -5,7 +5,7 @@
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
 **Tested up to:** 6.8  
-**Stable tag:** 1.0.2  
+**Stable tag:** 1.1.0  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -13,7 +13,7 @@ ReBlock creates a centralized content hub to efficiently manage common reusable 
 
 ## Description ##
 
-ReBlock creates a centralized content hub that efficiently organizes, edits, and hosts common and reused content down to individual blocks of content. This hub allows instructional designers, media strategists, and technologists to manage and deploy content across multiple platforms, ensuring consistency, quality, and accessibility.
+ReBlock creates a centralized content hub that efficiently organizes, edits, and hosts common and reused content down to individual blocks of content. This hub allows users to manage and deploy content across other post types or platforms, ensuring consistency, quality, and accessibility.
 
 ## Installation ##
 
@@ -38,12 +38,19 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
-### 1.0.2 ###
+### 1.1.0 (04/23/2025) ###
+
+* Add Categories taxonomy.
+* Now tracks where ReBlock blocks are being used.
+* Display ReBlock usage information (where it is being used) in the ReBlock post editor.
+* The ReBlock's input field no longer returns posts that directly or indirectly nested the current ReBlock post. This is to prevent circular references (infinite loops).
+
+### 1.0.2 (pre-release) ###
 
 * Fix HTML character encodings for ReBlock content that uses an Excelsior Bootstrap container and is inserted into another Excelsior Bootstrap container.
 * Minor fixes and improvements.
 
-### 1.0.1 (4/16/52025) ###
+### 1.0.1 (04/16/2025) ###
 
 * Add height adjustment support for ReBlock iFrame embed (send new height value when page resizes).
 * Add embed code and copy button to the Page Settings sidebar (for Public post only).

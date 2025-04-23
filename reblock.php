@@ -5,7 +5,7 @@
  * Description: ReBlock creates a centralized content hub to efficiently manage common reusable content blocks, ensuring consistency, quality, and accessibility.
  * Author:      Ethan Lin
  * Author URI:  https://profiles.wordpress.org/eslin87/
- * Version:     1.0.2
+ * Version:     1.1.0
  * License:     GPLv2 or later
  */
 
@@ -17,8 +17,9 @@ define( 'EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT', is_plugin_active( 'excelsior-boots
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-require_once __DIR__ . '/includes/post-types.php';
+require_once __DIR__ . '/includes/post-type.php';
 require_once __DIR__ . '/includes/block.php';
 require_once __DIR__ . '/includes/options.php';
+require_once __DIR__ . '/includes/usage-tracking.php';
 
 register_activation_hook( __FILE__, 'eslin87\ReBlock\reblock_activate_plugin' );
