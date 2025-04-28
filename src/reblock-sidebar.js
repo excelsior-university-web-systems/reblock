@@ -7,6 +7,19 @@ import { store as coreDataStore } from '@wordpress/core-data';
 import { caution } from '@wordpress/icons';
 
 /**
+ * Custom hook: Determines if the current post type is publicly viewable.
+ *
+ * Note:
+ * - This hook must be called at the top level of a React component.
+ * - Do not call inside event handlers, conditionals, or nested functions.
+ * - Follows the Rules of Hooks: Hooks must be called unconditionally and in the same order on every render.
+ */const usePublicViewable = () => {
+    const postType = useSelect( ( select ) => select( 'core/editor' ).getCurrentPostType(), [] );
+    const postTypeObj = useSelect( ( select ) => select( 'core' ).getPostType(postType), [] );
+    return postTypeObj && postTypeObj.viewable;
+};
+
+/**
  * Renders the "ReBlock Usage" panel in the block editor sidebar.
  *
  * - Retrieves `_reblock_used_in` meta to determine where the current ReBlock is used.
@@ -18,6 +31,7 @@ import { caution } from '@wordpress/icons';
  */
 const ReBlockUsageTrackerPanel = () => {
 
+    const publiclyViewable = usePublicViewable();
     const meta = useSelect(
         ( select ) => select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {},
         []
@@ -69,7 +83,7 @@ const ReBlockUsageTrackerPanel = () => {
                 <p><em>No references found.</em></p>
             ) : (
                 <>
-                <p>This ReBlock appears in the following posts and pages. Changes to this ReBlock will affect all listed items.</p>
+                <p>This ReBlock is used in the following content items. Updates to this ReBlock will affect all listed items.</p>
                 <ul style={{listStyle: 'revert', padding: 'revert'}}>
                     { posts.map( post => (
                         <li key={ post.id }>
@@ -79,9 +93,11 @@ const ReBlockUsageTrackerPanel = () => {
                         </li>
                     ) ) }
                 </ul>
-                <Notice status='warning' __unstableHTML={true} isDismissible={false}>
-                    <strong>Warning:</strong> This list excludes any instances of the ReBlock content that have been embedded via iframe on external websites. Updates to this ReBlock will still propagate to those external iframe embeds.
-                </Notice>
+                { publiclyViewable && (
+                    <Notice status='warning' __unstableHTML={true} isDismissible={false}>
+                        <strong>Warning:</strong> This list does not include ReBlock content embedded as an iframe on external sites. Updates to this ReBlock will still apply to those embeds.
+                    </Notice>
+                ) }
                 </>
             ) }
         </PluginDocumentSettingPanel>
@@ -106,13 +122,11 @@ registerPlugin( 'reblock-usage-tracker', {
 const ReBlockEmbedPanel = () => {
     const postId = useSelect( (select) => select('core/editor').getCurrentPostId(), [] );
     const permalink = useSelect( (select) => select('core/editor').getPermalink(), [] );
-    const postType = useSelect( (select) => select('core/editor').getCurrentPostType(), [] );
-    const postTypeObj = useSelect( (select) => select('core').getPostType(postType), [] );
+    const publiclyViewable = usePublicViewable();
+
+    if ( !publiclyViewable ) return null;
 
     const [copied, setCopied] = useState( false );
-
-    if ( !postTypeObj || postTypeObj.viewable !== true ) return null;
-
     const iframeCode = `<iframe data-reblock="${postId}" style="width: 100%; height: auto; overflow: hidden; border: none;" scrolling="no" src="${permalink}"></iframe>`;
 
     const copyToClipboard = () => {

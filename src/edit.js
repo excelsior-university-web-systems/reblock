@@ -304,7 +304,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 {isExcelsiorBootstrapPostType && reblockIsPublic && (
                     <>
                     <Notice isDismissible={false} status="info">
-                        ReBlock must be embedded as an iFrame to work correctly in Excelsior Bootstrap.
+                        ReBlock must be embedded as an iframe to work correctly in Excelsior Bootstrap.
                     </Notice>
                     <Spacer as='div' />
                     </>
@@ -312,7 +312,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 {!reblockIsPublic && !isExcelsiorBootstrapPostType && (
                     <>
                     <Notice isDismissible={false} status="warning">
-                        ReBlock must be set to public to be embedded as an iFrame.
+                        ReBlock must be set to public to be embedded as an iframe.
                     </Notice>
                     <Spacer as='div' />
                     </>
@@ -320,13 +320,13 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                 {!reblockIsPublic && isExcelsiorBootstrapPostType && (
                     <>
                     <Notice isDismissible={false} status="error">
-                        ReBlock must be set to public to be embedded as an iFrame and work correctly in Excelsior Bootstrap.
+                        ReBlock must be set to public to be embedded as an iframe and work correctly in Excelsior Bootstrap.
                     </Notice>
                     <Spacer as='div' />
                     </>
                 )}
                 <ToggleControl 
-                    label='Embed as iFrame'
+                    label='Embed as an iframe'
                     help='Toggle on to display this ReBlock content outside WordPress.'
                     checked={useIframe}
                     disabled={isExcelsiorBootstrapPostType || !reblockIsPublic}

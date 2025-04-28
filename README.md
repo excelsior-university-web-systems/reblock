@@ -40,9 +40,10 @@ This section describes how to install the plugin and get it working.
 
 ### 1.1.1 (04/30/2025) ###
 
-* Fix category taxonomy assignment permission.
-* "Embed as iFrame" option is disabled/enabled according to post types visibility.
+* Fix taxonomy assignment permission.
+* "Embed as an iframe" option is disabled/enabled according to post types visibility.
 * Add script to auto-adjust ReBlock iframe embed's height on browser viewport resize.
+* Minor fixes and improvements.
 
 ### 1.1.0 (04/23/2025) ###
 
