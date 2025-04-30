@@ -19,5 +19,25 @@ domReady( () => {
         window.parent.postMessage( data, '*' );
         window.addEventListener( 'resize', logDocHeight );
     }
+
+    function adjustReBlockIFrameHeight() {
+    
+        const reblockIframes = [...document.querySelectorAll( 'iframe' )].filter( iframe =>
+            iframe.src.includes( '/reblock/' )
+        );
+    
+        if ( !reblockIframes.length ) return;
+    
+        window.addEventListener( 'message', ( { data } ) => {
+            if ( !data?.id || !data?.type || !data?.height ) return;
+            if ( data.type != 'reblock' ) return;
+            const targetIframe = document.querySelector( `iframe[data-reblock='${data.id}']` );
+            if ( !targetIframe ) return;
+            targetIframe.style.height = `${data.height}px`;
+        } );
+    }
+
+    adjustReBlockIFrameHeight();
+
 } );
 

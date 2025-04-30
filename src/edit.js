@@ -20,6 +20,14 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const [ searchQuery, setSearchQuery ] = useState('');
     const dynamicBlockId = `${blockId}-${refreshKey}`;
 
+    const reblockIsPublic = useSelect( (select) => {
+        const { getEditorSettings } = select( 'core/editor' );
+        const isPublic = getEditorSettings().reblock_post_type_is_public || false;
+        return getEditorSettings().reblock_post_type_is_public || false;
+    }, [] );
+
+    console.log(reblockIsPublic, !reblockIsPublic);
+
     // check for Excelsior Bootstrap Editor support
     const hasExcelsiorBootstrapNamespace = useSelect( ( select ) => {
         const { getBlockParents, getBlock } = select( 'core/block-editor' );
@@ -46,10 +54,16 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const usedInReBlock = usedIn.filter( ( item ) => item.type == 'reblock' );
 
     useEffect( () => {
-        if ( isExcelsiorBootstrapPostType ) {
+        if ( isExcelsiorBootstrapPostType && reblockIsPublic ) {
             setAttributes( { useIframe: true } );
         }
     }, [ isExcelsiorBootstrapPostType ] );
+
+    useEffect( () => {
+        if ( !reblockIsPublic && useIframe ) {
+            setAttributes( { useIframe: false } );
+        }
+    }, [ reblockIsPublic ] );
 
     const fetchDeepExcludedIds = async ( initialIds ) => {
         const visited = new Set();
@@ -287,23 +301,38 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                     __nextHasNoMarginBottom
                 />
                 <Spacer as='div' />
+                {isExcelsiorBootstrapPostType && reblockIsPublic && (
+                    <>
+                    <Notice isDismissible={false} status="info">
+                        ReBlock must be embedded as an iframe to work correctly in Excelsior Bootstrap.
+                    </Notice>
+                    <Spacer as='div' />
+                    </>
+                ) }
+                {!reblockIsPublic && !isExcelsiorBootstrapPostType && (
+                    <>
+                    <Notice isDismissible={false} status="warning">
+                        ReBlock must be set to public to be embedded as an iframe.
+                    </Notice>
+                    <Spacer as='div' />
+                    </>
+                )}
+                {!reblockIsPublic && isExcelsiorBootstrapPostType && (
+                    <>
+                    <Notice isDismissible={false} status="error">
+                        ReBlock must be set to public to be embedded as an iframe and work correctly in Excelsior Bootstrap.
+                    </Notice>
+                    <Spacer as='div' />
+                    </>
+                )}
                 <ToggleControl 
-                    label='Embed via iFrame'
-                    help={
-                        !isExcelsiorBootstrapPostType &&
-                        'Toggle on to show this ReBlock content outside WordPress, or to allow circular references (rare occurrence).'
-                    }
+                    label='Embed as an iframe'
+                    help='Toggle on to display this ReBlock content outside WordPress.'
                     checked={useIframe}
-                    disabled={isExcelsiorBootstrapPostType}
+                    disabled={isExcelsiorBootstrapPostType || !reblockIsPublic}
                     __nextHasNoMarginBottom
                     onChange={(value) => setAttributes({ useIframe: value })}
                 />
-                
-                {isExcelsiorBootstrapPostType && (
-                    <Notice isDismissible={false} status="info">
-                        ReBlock can only be embedded as an iFrame for Excelsior Bootstrap.
-                    </Notice>
-                ) }
             </PanelBody>
         </InspectorControls>
 		<div { ...blockProps }>

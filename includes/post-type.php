@@ -87,6 +87,7 @@ function create_reblock_post_type() {
         'public'              => $is_public,
         'publicly_queryable'  => $is_public,
         'exclude_from_search' => ! $is_searchable,
+        'taxonomies'          => array( REBLOCK_POST_TYPE_NAME . '_category' ),
         'show_ui'             => true,
         'show_in_menu'        => true,
         'map_meta_cap'        => true,
@@ -143,7 +144,13 @@ function reblock_register_category_taxonomy() {
         'show_in_nav_menus' => false, 
         'query_var'         => false,
         'rewrite'           => false,
-        'show_in_rest'      => true
+        'show_in_rest'      => true,
+        'capabilities'      => array(
+            'manage_terms' => 'manage_categories',
+            'edit_terms'   => 'manage_categories',
+            'delete_terms' => 'manage_categories',
+            'assign_terms' => 'manage_categories'
+        )
     );
     
     register_taxonomy(

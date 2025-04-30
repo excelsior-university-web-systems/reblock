@@ -129,6 +129,15 @@ function reblock_enqueue_block_editor_assets() {
 
 add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\reblock_enqueue_block_editor_assets' );
 
+
+function reblock_inject_editor_option( $editor_settings, $context ) {
+    $editor_settings['reblock_post_type_is_public'] = (bool) get_option( 'reblock_is_public', false );
+    return $editor_settings;
+}
+
+add_filter( 'block_editor_settings_all', __NAMESPACE__.'\\reblock_inject_editor_option', 10, 2 );
+
+
 /************ helpers ************/
 
 /**

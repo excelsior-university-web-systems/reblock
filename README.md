@@ -5,7 +5,7 @@
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
 **Tested up to:** 6.8  
-**Stable tag:** 1.1.0  
+**Stable tag:** 1.1.1  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -37,6 +37,13 @@ This section describes how to install the plugin and get it working.
 
 
 ## Changelog ##
+
+### 1.1.1 (04/30/2025) ###
+
+* Fix taxonomy assignment permission.
+* "Embed as an iframe" option is disabled/enabled according to post types visibility.
+* Add script to auto-adjust ReBlock iframe embed's height on browser viewport resize.
+* Minor fixes and improvements.
 
 ### 1.1.0 (04/23/2025) ###
 
