@@ -383,6 +383,10 @@ function reblock_remove_all_styles_and_scripts() {
     // Retain Excelsior Bootstrap framework if supported
     if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
         $required[] = 'excelsior-bootstrap-editor-frontend';
+        if ( !in_array('excelsior-bootstrap-editor-frontend', $wp_styles->queue, true ) ) {
+            wp_enqueue_style( 'excelsior-bootstrap-editor-frontend' );
+            wp_enqueue_script( 'excelsior-bootstrap-editor-frontend' );
+        }
     }
 
     $allowed_option = get_option( 'reblock_allowed_styles_scripts', '*' );

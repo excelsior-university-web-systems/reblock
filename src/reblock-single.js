@@ -1,43 +1,40 @@
-import domReady from '@wordpress/dom-ready';
+import domReady from "@wordpress/dom-ready";
 
-domReady( () => {
-    const reblock = document.querySelector( '#reblock-' + reblock_obj.postId );
+function debounce(fn, wait = 300) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+    };
+}
 
-    if ( reblock ) {
-        const data = {
-            id: reblock_obj.postId,
-            type: 'reblock',
-            height: document.documentElement.offsetHeight
-        };
-        const logDocHeight = () => {
-            const docHeight = document.documentElement.offsetHeight;
-            if ( data.height != docHeight ) {
-                data.height = docHeight;
-                window.parent.postMessage( data, '*' );
-            }
-        };
-        window.parent.postMessage( data, '*' );
-        window.addEventListener( 'resize', logDocHeight );
+domReady(() => {
+    const reblock = document.querySelector("#reblock-" + reblock_obj.postId);
+    let lastHeight = Math.round(document.documentElement.scrollHeight);
+    const ro = new ResizeObserver(([entry]) => {
+        const h = Math.round(entry.contentRect.height);
+        if (h === lastHeight) return;
+        lastHeight = h;
+        postHeight(h);
+    });
+
+    const postHeight = debounce((newHeight) => {
+        window.parent.postMessage({ type: "reblock", id: reblock_obj.postId, height: newHeight }, "*");
+    }, 100);
+
+    if (reblock) {
+        ro.observe(document.documentElement);
     }
 
-    function adjustReBlockIFrameHeight() {
-    
-        const reblockIframes = [...document.querySelectorAll( 'iframe' )].filter( iframe =>
-            iframe.src.includes( '/reblock/' )
-        );
-    
-        if ( !reblockIframes.length ) return;
-    
-        window.addEventListener( 'message', ( { data } ) => {
-            if ( !data?.id || !data?.type || !data?.height ) return;
-            if ( data.type != 'reblock' ) return;
-            const targetIframe = document.querySelector( `iframe[data-reblock='${data.id}']` );
-            if ( !targetIframe ) return;
-            targetIframe.style.height = `${data.height}px`;
-        } );
-    }
+    window.addEventListener("message", (event) => {
+        const msg = event.data;
+        if (msg?.type !== "reblock" || !msg.id) return;
 
-    adjustReBlockIFrameHeight();
+        const iframe = document.querySelector(`iframe[data-reblock='${msg.id}']`);
+        if (iframe) iframe.style.height = `${msg.height}px`;
+    });
 
-} );
-
+    window.addEventListener("beforeunload", () => {
+        ro.disconnect();
+    });
+});
