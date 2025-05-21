@@ -22,11 +22,8 @@ export default function edit( { attributes, setAttributes, clientId } ) {
 
     const reblockIsPublic = useSelect( (select) => {
         const { getEditorSettings } = select( 'core/editor' );
-        const isPublic = getEditorSettings().reblock_post_type_is_public || false;
         return getEditorSettings().reblock_post_type_is_public || false;
     }, [] );
-
-    console.log(reblockIsPublic, !reblockIsPublic);
 
     // check for Excelsior Bootstrap Editor support
     const hasExcelsiorBootstrapNamespace = useSelect( ( select ) => {
@@ -208,6 +205,14 @@ export default function edit( { attributes, setAttributes, clientId } ) {
         setRefreshKey( ( prevKey ) => prevKey + 1 );
     };
 
+    const unescapeHTML = ( escapedHTML ) => {
+        return escapedHTML.replace(/&amp;/g, '&')
+                           .replace(/&lt;/g, '<')
+                           .replace(/&gt;/g, '>')
+                           .replace(/&quot;/g, '"')
+                           .replace(/&#39;/g, "'");
+    };
+
     const checkForBootstrap = ( content ) => {
 
         if ( hasExcelsiorBootstrapNamespace ) {
@@ -259,7 +264,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                             description={'A ReBlock content ' + ( post ? ' from ' + post.title.rendered : '') }
                             variant='tertiary'
                             __next40pxDefaultSize
-                            text={post ? post.title.rendered : 'ReBlock' }
+                            text={post ? unescapeHTML( post.title.rendered ) : 'ReBlock' }
                             disabled={ true }
                         />
                     </ToolbarGroup>
