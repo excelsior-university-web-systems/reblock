@@ -5,7 +5,7 @@ Tags: reusable, centralized, content, block
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,12 @@ This section describes how to install the plugin and get it working.
 1. An example of ReBlock
 
 == Changelog ==
+
+= 1.1.3 (06/04/2025) =
+
+* Wrap the `iframe` in a `div` tag to prevent some editors from wrapping it in a `p` tag.
+* Add `title` attribute to the `iframe` embed code.
+* Always send the content height message once on page load before resize observer kicks in.
 
 = 1.1.2 (05/21/2025) =
 

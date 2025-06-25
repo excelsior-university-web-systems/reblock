@@ -4,6 +4,7 @@ import { TextareaControl, Button, Spinner, Notice } from '@wordpress/components'
 import { useSelect } from '@wordpress/data';
 import { useState } from '@wordpress/element';
 import { store as coreDataStore } from '@wordpress/core-data';
+import { escapeAttribute } from '@wordpress/escape-html';
 import { caution } from '@wordpress/icons';
 
 /**
@@ -121,13 +122,14 @@ registerPlugin( 'reblock-usage-tracker', {
  */
 const ReBlockEmbedPanel = () => {
     const postId = useSelect( (select) => select('core/editor').getCurrentPostId(), [] );
+    const postTitle = useSelect( (select) => select('core/editor').getEditedPostAttribute( 'title' ), [] );
     const permalink = useSelect( (select) => select('core/editor').getPermalink(), [] );
     const publiclyViewable = usePublicViewable();
 
     if ( !publiclyViewable ) return null;
 
     const [copied, setCopied] = useState( false );
-    const iframeCode = `<iframe data-reblock="${postId}" style="width: 100%; height: auto; overflow: hidden; border: none;" scrolling="no" src="${permalink}"></iframe>`;
+    const iframeCode = `<div><iframe title="${escapeAttribute(postTitle)}" data-reblock="${postId}" style="width: 100%; height: auto; overflow: hidden; border: none;" scrolling="no" src="${permalink}"></iframe></div>`;
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText( iframeCode ).then( () => {

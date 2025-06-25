@@ -23,6 +23,7 @@ domReady(() => {
     }, 100);
 
     if (reblock) {
+        postHeight(lastHeight);
         ro.observe(document.documentElement);
     }
 
