@@ -38,7 +38,7 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
-### 1.1.2 (06/04/2025) ###
+### 1.1.3 (06/04/2025) ###
 
 * Wrap the `iframe` in a `div` tag to prevent some editors from wrapping it in a `p` tag.
 * Add `title` attribute to the `iframe` embed code.
