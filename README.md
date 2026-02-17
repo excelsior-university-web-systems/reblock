@@ -38,6 +38,11 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
+### 1.1.4 (03/11/2026) ###
+
+* Add a "Page" template option; defaulted to "Blank" (full width).
+* Fix issue where checkbox settings were unable to be unchecked.
+
 ### 1.1.3 (06/04/2025) ###
 
 * Wrap the `iframe` in a `div` tag to prevent some editors from wrapping it in a `p` tag.
