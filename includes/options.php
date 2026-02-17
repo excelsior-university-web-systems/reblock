@@ -122,7 +122,7 @@ function reblock_register_settings() {
     register_setting( 'reblock_settings_group', 'reblock_show_wp_admin_bar', array(
         'type' => 'boolean',
         'sanitize_callback' => '\\rest_sanitize_boolean',
-        'default' => false,
+        'default' => true,
     ) );
 
     register_setting( 'reblock_settings_group', 'reblock_allow_global_styles', array(
@@ -204,6 +204,7 @@ function reblock_general_section() {
 function reblock_hash_slug_option() {
     $option = get_option( 'reblock_hash_slug_option', false );
     ?>
+    <input type="hidden" name="reblock_hash_slug_option" value="0" />
     <input type="checkbox" name="reblock_hash_slug_option" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_hash_slug_option"><?php esc_html_e( 'Hash the last part of the URL (for Public only)', 'reblock' ); ?></label>
     <p class="description"><?php esc_html_e( 'Ensure only users with the exact URLs can access posts.', 'reblock' ); ?></p>
@@ -213,6 +214,7 @@ function reblock_hash_slug_option() {
 function reblock_is_public() {
     $option = get_option( 'reblock_is_public', true );
     ?>
+    <input type="hidden" name="reblock_is_public" value="0" />
     <input type="checkbox" name="reblock_is_public" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_is_public"><?php esc_html_e( 'Public', 'reblock' ); ?></label>
     <p class="description"><?php esc_html_e( 'Display ReBlock posts on the front end with accessible URLs.', 'reblock' ); ?></p>
@@ -222,6 +224,7 @@ function reblock_is_public() {
 function reblock_is_searchable() {
     $option = get_option( 'reblock_is_searchable', false );
     ?>
+    <input type="hidden" name="reblock_is_searchable" value="0" />
     <input type="checkbox" name="reblock_is_searchable" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_is_searchable"><?php esc_html_e( 'Include ReBlock posts in the front end search results (for Public only)', 'reblock' ); ?></label>
     <?php
@@ -236,6 +239,7 @@ function reblock_excelsior_bootstrap_editor_section() {
 function reblock_start_with_excelsior_bootstrap() {
     $option = get_option( 'reblock_start_with_excelsior_bootstrap', false );
     ?>
+    <input type="hidden" name="reblock_start_with_excelsior_bootstrap" value="0" />
     <input type="checkbox" name="reblock_start_with_excelsior_bootstrap" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_start_with_excelsior_bootstrap"><?php esc_html_e( 'Start new ReBlock with Excelsior Bootstrap', 'reblock' ); ?></label>
     <p class="description"><?php esc_html_e( 'Automatically add the Excelsior Bootstrap block to the editor.', 'reblock' ); ?></p>
@@ -284,6 +288,7 @@ function reblock_styles_scripts_section() {
 function reblock_show_wp_admin_bar() {
     $option = get_option( 'reblock_show_wp_admin_bar', true );
     ?>
+    <input type="hidden" name="reblock_show_wp_admin_bar" value="0" />
     <input type="checkbox" name="reblock_show_wp_admin_bar" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_show_wp_admin_bar"><?php esc_html_e( 'Show Admin Bar', 'reblock' ); ?></label>
     <?php
@@ -292,6 +297,7 @@ function reblock_show_wp_admin_bar() {
 function reblock_allow_global_styles() {
     $option = get_option( 'reblock_allow_global_styles', true );
     ?>
+    <input type="hidden" name="reblock_allow_global_styles" value="0" />
     <input type="checkbox" name="reblock_allow_global_styles" value="1" <?php checked( 1, $option, true ); ?> />
     <label for="reblock_allow_global_styles"><?php esc_html_e( 'Allow WordPress global styles', 'reblock' ); ?></label>
     <p class="description"><?php esc_html_e( 'Ensure block styling in the editor matches the front-end.', 'reblock' ); ?></p>
