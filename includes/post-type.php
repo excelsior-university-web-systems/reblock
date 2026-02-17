@@ -92,7 +92,7 @@ function create_reblock_post_type() {
         'show_in_menu'        => true,
         'map_meta_cap'        => true,
         'capability_type'     => REBLOCK_POST_TYPE_NAME,
-        'supports'            => array( 'title', 'editor', 'author', 'revisions', 'custom-fields' ),
+        'supports'            => array( 'title', 'editor', 'author', 'revisions', 'custom-fields', 'page-attributes' ),
         'has_archive'         => false,
         'show_in_nav_menus'   => false,
         'show_in_admin_bar'   => true,
@@ -309,27 +309,55 @@ function reblock_filter_posts_by_category( $query ) {
 add_filter( 'parse_query', __NAMESPACE__.'\\reblock_filter_posts_by_category' );
 
 /**
- * Loads a custom blank template for ReBlock single posts.
+ * Registers plugin-provided templates for ReBlock posts only.
+ *
+ * @param array $post_templates Existing templates for the ReBlock post type.
+ * @return array Modified templates list.
+ */
+function reblock_register_post_templates( $post_templates ) {
+    $post_templates['blank.php'] = __( 'Blank', 'reblock' );
+    $post_templates['page.php']  = __( 'Page', 'reblock' );
+
+    return $post_templates;
+}
+
+add_filter( 'theme_'.REBLOCK_POST_TYPE_NAME.'_templates', __NAMESPACE__.'\\reblock_register_post_templates' );
+
+/**
+ * Loads the selected plugin template for ReBlock single posts.
  *
  * - Applies only to singular posts of the REBLOCK post type.
- * - Returns the plugin-provided blank template if it exists.
- * - Falls back to the default template otherwise.
+ * - Uses `_wp_page_template` to load `blank.php` or `page.php` from the plugin.
+ * - Falls back to `blank.php` when no template is selected.
  *
  * @param string $template The default single post template path.
  * @return string The modified or original template path.
  */
-function reblock_blank_single_template( $template ) {
-    if ( is_singular( REBLOCK_POST_TYPE_NAME ) ) {
-        $plugin_template = plugin_dir_path( __FILE__ ) . 'templates/blank.php';
-        if ( file_exists( $plugin_template ) ) {
-            return $plugin_template;
-        }
+function reblock_single_template( $template ) {
+    if ( ! is_singular( REBLOCK_POST_TYPE_NAME ) ) {
+        return $template;
     }
+
+    $selected_template = get_page_template_slug( get_queried_object_id() );
+    $allowed_templates = array(
+        'blank.php',
+        'page.php',
+    );
+
+    if ( ! in_array( $selected_template, $allowed_templates, true ) ) {
+        $selected_template = 'blank.php';
+    }
+
+    $plugin_template = plugin_dir_path( __FILE__ ) . 'templates/' . $selected_template;
     
+    if ( file_exists( $plugin_template ) ) {
+        return $plugin_template;
+    }
+
     return $template;
 }
 
-add_filter( 'single_template', __NAMESPACE__.'\\reblock_blank_single_template', 11 );
+add_filter( 'single_template', __NAMESPACE__.'\\reblock_single_template', 11 );
 
 /**
  * Removes all styles and scripts on ReBlock single posts except allowed ones and enqueues the ReBlock frontend script.
