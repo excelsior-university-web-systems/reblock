@@ -103,7 +103,6 @@ function create_reblock_post_type() {
 
     if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT && get_option( 'reblock_start_with_excelsior_bootstrap', false ) ) {
         $args['template'] = array( array( 'excelsior-bootstrap-editor/namespace' ) );
-        $args['template_lock'] = 'insert';
     }
 
     register_post_type( REBLOCK_POST_TYPE_NAME, $args );
@@ -146,10 +145,10 @@ function reblock_register_category_taxonomy() {
         'rewrite'           => false,
         'show_in_rest'      => true,
         'capabilities'      => array(
-            'manage_terms' => 'manage_categories',
-            'edit_terms'   => 'manage_categories',
-            'delete_terms' => 'manage_categories',
-            'assign_terms' => 'manage_categories'
+            'manage_terms' => 'manage_reblock_categories',
+            'edit_terms'   => 'manage_reblock_categories',
+            'delete_terms' => 'manage_reblock_categories',
+            'assign_terms' => 'manage_reblock_categories'
         )
     );
     
@@ -179,6 +178,18 @@ function reblock_initialize() {
 }
 
 add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
+
+/**
+ * Grants administrators permission to manage ReBlock categories.
+ * 
+ * @return void
+ */
+function reblock_add_custom_taxonomy_caps() {
+    $role = get_role( 'administrator' );
+    $role->add_cap( 'manage_reblock_categories' );
+}
+
+add_action( 'admin_init',  __NAMESPACE__.'\\reblock_add_custom_taxonomy_caps' );
 
 /**
  * Reorders the category column in the ReBlock admin post list table.
