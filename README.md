@@ -4,8 +4,8 @@
 **Tags:** reusable, centralized, content, block  
 **Requires at least:** 5.0  
 **Requires PHP:** 8.0  
-**Tested up to:** 6.9  
-**Stable tag:** 1.1.4  
+**Tested up to:** 7.0  
+**Stable tag:** 1.1.5  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -37,6 +37,11 @@ This section describes how to install the plugin and get it working.
 
 
 ## Changelog ##
+
+### 1.1.5 (05/13/2026) ###
+
+* Allow user to remove the Excelsior Bootstrap block in the editor.
+* Set custom capability to manage taxonomy instead of WordPress default capability.
 
 ### 1.1.4 (03/11/2026) ###
 

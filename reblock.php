@@ -5,7 +5,7 @@
  * Description: ReBlock creates a centralized content hub to efficiently manage common reusable content blocks, ensuring consistency, quality, and accessibility.
  * Author:      Ethan Lin
  * Author URI:  https://profiles.wordpress.org/eslin87/
- * Version:     1.1.4
+ * Version:     1.1.5
  * License:     GPLv2 or later
  */
 
