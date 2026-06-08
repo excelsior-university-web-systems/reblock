@@ -101,7 +101,7 @@ function create_reblock_post_type() {
         'delete_with_user'    => false,
     );
 
-    if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT && get_option( 'reblock_start_with_excelsior_bootstrap', false ) ) {
+    if ( EXCELSIOR_BOOTSTRAP_SUPPORT && get_option( 'reblock_start_with_excelsior_bootstrap', false ) ) {
         $args['template'] = array( array( 'excelsior-bootstrap-editor/namespace' ) );
     }
 
@@ -420,7 +420,7 @@ function reblock_remove_all_styles_and_scripts() {
     }
 
     // Retain Excelsior Bootstrap framework if supported
-    if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
+    if ( EXCELSIOR_BOOTSTRAP_SUPPORT ) {
         $required[] = 'excelsior-bootstrap-editor-frontend';
         if ( !in_array('excelsior-bootstrap-editor-frontend', $wp_styles->queue, true ) ) {
             wp_enqueue_style( 'excelsior-bootstrap-editor-frontend' );

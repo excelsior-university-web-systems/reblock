@@ -88,9 +88,9 @@ function reblock_register_settings() {
         'reblock_general_section'
     );
 
-    /*** EXCELSIOR BOOTSTRAP EDITOR ***/
+    /*** EXCELSIOR BOOTSTRAP ***/
 
-    if ( EXCELSIOR_BOOTSTRAP_EDITOR_SUPPORT ) {
+    if ( EXCELSIOR_BOOTSTRAP_SUPPORT ) {
         // Register a new setting for "reblock_settings_group".
         register_setting( 'reblock_settings_group', 'reblock_start_with_excelsior_bootstrap', array(
             'type' => 'boolean',
@@ -98,23 +98,23 @@ function reblock_register_settings() {
             'default' => false,
         ) );
 
-        // Add Excelsior Bootstrap Editor Section
+        // Add Excelsior Bootstrap Section
         add_settings_section(
-            'reblock_excelsior_bootstrap_editor', // Section ID
-            __( 'Excelsior Bootstrap Editor', 'reblock' ), // Title for the section
-            __NAMESPACE__.'\\reblock_excelsior_bootstrap_editor_section', // Callback function for section description
+            'reblock_excelsior_bootstrap', // Section ID
+            __( 'Excelsior Bootstrap', 'reblock' ), // Title for the section
+            __NAMESPACE__.'\\reblock_excelsior_bootstrap_section', // Callback function for section description
             'reblock_settings' // Page on which to add this section
         );
 
     }
     
-    // Add Excelsior Bootstrap Editor Checkbox
+    // Add Excelsior Bootstrap Checkbox
     add_settings_field(
         'reblock_start_with_excelsior_bootstrap', // Field ID
         __( 'Block Editor', 'reblock' ), // Field title/label
         __NAMESPACE__.'\\reblock_start_with_excelsior_bootstrap', // Callback function to render the field
         'reblock_settings', // Page on which to add this field
-        'reblock_excelsior_bootstrap_editor' // Section in which to add the field
+        'reblock_excelsior_bootstrap' // Section in which to add the field
     );
 
     /*** Styles and JavaScript ***/
@@ -230,9 +230,9 @@ function reblock_is_searchable() {
     <?php
 }
 
-/*** Excelsior Bootstrap Editor ***/
+/*** Excelsior Bootstrap ***/
 
-function reblock_excelsior_bootstrap_editor_section() {
+function reblock_excelsior_bootstrap_section() {
     echo '';
 }
 
