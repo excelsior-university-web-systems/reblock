@@ -38,7 +38,7 @@ This section describes how to install the plugin and get it working.
 
 ## Changelog ##
 
-### 1.1.5 (06/10/2026) ###
+### 1.1.6 (06/10/2026) ###
 
 * Update Excelsior Bootstrap plugin name.
 
