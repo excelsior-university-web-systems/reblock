@@ -1,5 +1,5 @@
 const AdmZip = require('adm-zip');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 const fs = require('fs-extra'); // fs-extra provides extra methods like removeSync.
 const path = require('path');
 
@@ -37,7 +37,7 @@ unwantedFiles.forEach(file => {
 // Step 4: Create a new zip archive using archiver.
 const outputZip = zipFile; // reuse the same filename or change as needed.
 const output = fs.createWriteStream(outputZip);
-const archive = archiver('zip', { zlib: { level: 9 } });
+const archive = new ZipArchive({ zlib: { level: 9 } });
 
 // Listen for archive completion
 output.on('close', () => {
