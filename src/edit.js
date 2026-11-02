@@ -215,7 +215,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
 
     const checkForBootstrap = ( content ) => {
 
-        if ( hasExcelsiorBootstrapNamespace ) {
+        if ( hasExcelsiorBootstrapNamespace && isExcelsiorBootstrapPostType ) {
 
             const parser = new DOMParser();
             const doc = parser.parseFromString( content, 'text/html' );
