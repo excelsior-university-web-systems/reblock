@@ -13,6 +13,9 @@
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
 
+// is_plugin_active() is not loaded on front-end requests.
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
 define( 'REBLOCK_PLUGIN_NAME', 'ReBlock' );
 define( 'REBLOCK_POST_TYPE_NAME', 'reblock' );
 define( 'EXCELSIOR_BOOTSTRAP_SUPPORT', is_plugin_active( 'excelsior-bootstrap/excelsior-bootstrap.php' ) );

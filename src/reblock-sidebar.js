@@ -54,13 +54,17 @@ const ReBlockUsageTrackerPanel = () => {
             let all = [];
             
             for ( const [ type, ids ] of Object.entries( byType ) ) {
-                const recs = select( coreDataStore ).getEntityRecords( 'postType', type, {
-                        include:  ids,
-                        per_page: ids.length,
-                    } );
+                const query = { include: ids, per_page: ids.length };
+                const recs = select( coreDataStore ).getEntityRecords( 'postType', type, query );
 
                 if ( recs === null ) {
-                    return undefined;
+                    if ( ! select( coreDataStore ).hasFinishedResolution( 'getEntityRecords', [ 'postType', type, query ] ) ) {
+                        return undefined;
+                    }
+
+                    // Post type records could not be loaded (e.g., not available in the REST API); list them by ID.
+                    all = all.concat( ids.map( ( id ) => ( { id, type } ) ) );
+                    continue;
                 }
 
                 all = all.concat( recs );
@@ -87,10 +91,14 @@ const ReBlockUsageTrackerPanel = () => {
                 <p>This ReBlock is used in the following content items. Updates to this ReBlock will affect all listed items.</p>
                 <ul style={{listStyle: 'revert', padding: 'revert'}}>
                     { posts.map( post => (
-                        <li key={ post.id }>
-                            <a href={ post.link } target="_blank" rel="noopener noreferrer" >
-                                { post.title.rendered || `#${ post.id }` }
-                            </a>
+                        <li key={ `${ post.type }-${ post.id }` }>
+                            { post.link ? (
+                                <a href={ post.link } target="_blank" rel="noopener noreferrer" >
+                                    { post.title?.rendered || `#${ post.id }` }
+                                </a>
+                            ) : (
+                                `${ post.type } #${ post.id }`
+                            ) }
                         </li>
                     ) ) }
                 </ul>

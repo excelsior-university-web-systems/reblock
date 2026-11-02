@@ -368,7 +368,9 @@ function reblock_update_role_capabilities( $old_value = '', $new_value = '' ) {
     $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
     if ( ! $post_type_object ) return;
 
-    $capabilities = $post_type_object->cap;
+    $capabilities = reblock_get_role_capabilities();
+    // Also removes meta capabilities granted directly by earlier versions; `read` is never touched.
+    $removable_capabilities = array_diff( array_unique( (array) $post_type_object->cap ), array( 'read' ) );
 
     $required_roles = array( 'administrator' );
 
@@ -383,7 +385,7 @@ function reblock_update_role_capabilities( $old_value = '', $new_value = '' ) {
         if ( $role_name === 'administrator' ) continue;
         $role = get_role( $role_name );
         if ( $role ) {
-            foreach ( $capabilities as $cap ) {
+            foreach ( $removable_capabilities as $cap ) {
                 $role->remove_cap( $cap );
             }
         }

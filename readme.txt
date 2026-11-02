@@ -36,8 +36,22 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
-= 1.1. (11/02/2026) =
+= 1.1.7 (11/02/2026) =
 
+* Security: Only users who can edit content can read ReBlock posts through the REST API when ReBlock is not public or is unlisted.
+* Security: Unlisted ReBlock posts are excluded from XML sitemaps, front-end listings and feeds, front-end search (even when Searchable is enabled), and REST API search.
+* Security: The ReBlock block only renders published ReBlock posts; draft, private, and password-protected ReBlock posts require permission to view them.
+* Security: The ReBlock block no longer embeds non-ReBlock posts as iframes.
+* Security: ReBlock usage data is only exposed to users who can edit ReBlock posts.
+* Security: Usage tracking ignores block IDs that are not ReBlock posts.
+* Security: ReBlock iframe height messages are validated and only accepted from the embedded iframe that sent them.
+* Fix infinite loop when a ReBlock directly or indirectly references itself.
+* Fix role permission changes removing the core `read` capability from deselected roles.
+* Fix potential fatal error on the front end when `is_plugin_active()` is not loaded.
+* Fix ReBlock usage panel loading indefinitely when a ReBlock is used in a post type that is not available in the REST API.
+* Fix "Edit Original" link on sites installed in a subdirectory.
+* Improve performance of usage cleanup when deleting posts.
+* Update development dependencies.
 
 
 = 1.1.6 (06/10/2026) =
