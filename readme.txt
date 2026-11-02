@@ -2,10 +2,10 @@
 
 Contributors: eslin87
 Tags: reusable, centralized, content, block
-Requires at least: 6.0
+Requires at least: 7.0
 Requires PHP: 8.0
 Tested up to: 7.1
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,10 @@ This section describes how to install the plugin and get it working.
 1. An example of ReBlock
 
 == Changelog ==
+
+= 1.1. (11/02/2026) =
+
+
 
 = 1.1.6 (06/10/2026) =
 
