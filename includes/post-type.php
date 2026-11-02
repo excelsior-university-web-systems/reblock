@@ -22,11 +22,9 @@ function reblock_activate_plugin() {
         ) );
     }
 
-    $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
+    $capabilities = reblock_get_role_capabilities();
 
-    if ( ! $post_type_object ) return;
-
-    $capabilities = $post_type_object->cap;
+    if ( empty( $capabilities ) ) return;
 
     $admin_role = get_role( 'administrator' );
 
@@ -40,6 +38,75 @@ function reblock_activate_plugin() {
 
     update_option( 'reblock_caps_initialized', true );
     flush_rewrite_rules();
+}
+
+/**
+ * Returns the primitive ReBlock capabilities that can be assigned to roles.
+ *
+ * - Excludes the core `read` capability so role changes never affect basic site access.
+ * - Excludes meta capabilities, which are mapped by `map_meta_cap` and must not be granted directly.
+ *
+ * @return array List of capability names.
+ */
+function reblock_get_role_capabilities() {
+    $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
+
+    if ( ! $post_type_object ) return array();
+
+    $cap = $post_type_object->cap;
+
+    return array_values( array_diff(
+        array_unique( (array) $cap ),
+        array( 'read', $cap->edit_post, $cap->read_post, $cap->delete_post )
+    ) );
+}
+
+/**
+ * Whether ReBlock posts should be hidden from listings (not public or unlisted).
+ *
+ * @return bool
+ */
+function reblock_is_restricted() {
+    return ! get_option( 'reblock_is_public', true ) || get_option( 'reblock_hash_slug_option', false );
+}
+
+/**
+ * REST controller that limits reading ReBlock posts to users who can edit content
+ * when ReBlock is not public or is unlisted.
+ */
+class ReBlock_REST_Posts_Controller extends \WP_REST_Posts_Controller {
+
+    public function get_items_permissions_check( $request ) {
+        $check = $this->check_reblock_read_permission();
+        return true === $check ? parent::get_items_permissions_check( $request ) : $check;
+    }
+
+    public function get_item_permissions_check( $request ) {
+        $check = $this->check_reblock_read_permission();
+        return true === $check ? parent::get_item_permissions_check( $request ) : $check;
+    }
+
+    private function check_reblock_read_permission() {
+        if ( ! reblock_is_restricted() || reblock_current_user_can_edit_content() ) {
+            return true;
+        }
+
+        return new \WP_Error(
+            'rest_forbidden',
+            __( 'Sorry, you are not allowed to do that.' ),
+            array( 'status' => rest_authorization_required_code() )
+        );
+    }
+}
+
+/**
+ * Whether the current user can edit posts or ReBlock posts.
+ *
+ * @return bool
+ */
+function reblock_current_user_can_edit_content() {
+    $post_type_object = get_post_type_object( REBLOCK_POST_TYPE_NAME );
+    return current_user_can( 'edit_posts' ) || ( $post_type_object && current_user_can( $post_type_object->cap->edit_posts ) );
 }
 
 /**
@@ -59,7 +126,7 @@ function create_reblock_post_type() {
     $is_public      = ( $visibility == '1' );
 
     $searchability  = get_option( 'reblock_is_searchable', false );
-    $is_searchable  = ( $searchability == '1' );
+    $is_searchable  = ( $searchability == '1' ) && ! get_option( 'reblock_hash_slug_option', false );
 
     $args = array(
         'labels' => array(
@@ -97,6 +164,7 @@ function create_reblock_post_type() {
         'show_in_nav_menus'   => false,
         'show_in_admin_bar'   => true,
         'show_in_rest'        => true,
+        'rest_controller_class' => __NAMESPACE__ . '\\ReBlock_REST_Posts_Controller',
         'menu_icon'           => 'data:image/svg+xml;base64,' . base64_encode('<svg id="a" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 36 36"><path d="M28,0H4C1.79,0,0,1.79,0,4v24c0,2.21,1.79,4,4,4h24c2.21,0,4-1.79,4-4V4c0-2.21-1.79-4-4-4ZM17.11,26.84s-.04,0-.06,0c-5.99.57-11.31-3.82-11.88-9.81-.25-2.6.45-5.21,1.96-7.34l-1.99-1.99c-.07-.08-.12-.17-.13-.28-.02-.25.16-.47.41-.49l5.55-.51s.05,0,.08,0c.25.02.43.24.41.49l-.51,5.55c0,.11-.06.2-.13.28-.18.18-.46.18-.64,0l-1.75-1.75c-2.76,4.19-1.61,9.82,2.58,12.58,1.73,1.14,3.8,1.66,5.86,1.46.5-.06.95.29,1.02.78.06.5-.29.95-.78,1.02ZM26.88,24.94c-.08.08-.17.12-.28.13l-5.55.51c-.25.02-.47-.16-.49-.41,0-.03,0-.05,0-.08l.51-5.55c.02-.25.24-.43.49-.41.11,0,.2.06.28.13l1.74,1.74c2.32-3.59,1.89-8.38-1.14-11.41-1.99-1.99-4.68-2.87-7.28-2.62-.5.06-.95-.29-1.02-.78-.06-.5.29-.95.78-1.02.02,0,.04,0,.06,0,5.99-.57,11.31,3.82,11.88,9.81.25,2.57-.5,5.21-1.98,7.33l2,2c.18.18.18.46,0,.64Z" fill="black"/></svg>'),
         'delete_with_user'    => false,
     );
@@ -186,7 +254,9 @@ add_action( 'init', __NAMESPACE__.'\\reblock_initialize' );
  */
 function reblock_add_custom_taxonomy_caps() {
     $role = get_role( 'administrator' );
-    $role->add_cap( 'manage_reblock_categories' );
+    if ( $role && ! $role->has_cap( 'manage_reblock_categories' ) ) {
+        $role->add_cap( 'manage_reblock_categories' );
+    }
 }
 
 add_action( 'admin_init',  __NAMESPACE__.'\\reblock_add_custom_taxonomy_caps' );
@@ -559,18 +629,26 @@ function reblock_disable_slug_in_quick_edit() {
 add_action( 'admin_footer', __NAMESPACE__.'\\reblock_disable_slug_in_quick_edit' );
 
 /**
- * Excludes ReBlock posts from frontend search results if the setting is enabled.
+ * Excludes ReBlock posts from frontend search results and listings.
  *
- * - Applies only to the main search query on the frontend.
- * - Checks the `reblock_is_searchable` option before excluding.
- * - Removes REBLOCK_POST_TYPE_NAME from the search query.
+ * - Applies only to the main query on the frontend.
+ * - Excludes from search results unless `reblock_is_searchable` is enabled.
+ * - Excludes from all non-singular queries (archives, feeds, search) when unlisted.
+ * - Removes REBLOCK_POST_TYPE_NAME from the query.
  * - Prevents any ReBlock results by setting a dummy post type if it's the only one.
  *
  * @param WP_Query $query The current WordPress query object.
  * @return void
  */
 function reblock_exclude_from_search( $query ) {
-    if ( $query->is_search() && ! is_admin() && $query->is_main_query() && !get_option( 'reblock_is_searchable', false ) ) {
+    if ( is_admin() || ! $query->is_main_query() ) {
+        return;
+    }
+
+    $exclude_from_search = $query->is_search() && ! get_option( 'reblock_is_searchable', false );
+    $exclude_unlisted    = ! $query->is_singular() && get_option( 'reblock_hash_slug_option', false );
+
+    if ( $exclude_from_search || $exclude_unlisted ) {
         $post_type = $query->get( 'post_type' );
 
         // Forcefully remove 'reblock' from post_type query
@@ -586,4 +664,41 @@ function reblock_exclude_from_search( $query ) {
 }
 
 add_action( 'pre_get_posts', __NAMESPACE__.'\\reblock_exclude_from_search' );
+
+/**
+ * Excludes unlisted ReBlock posts from the REST API search endpoint for users who cannot edit content.
+ *
+ * @param array           $query_args WP_Query arguments for the search.
+ * @param WP_REST_Request $request    The REST request.
+ * @return array Modified query arguments.
+ */
+function reblock_exclude_from_rest_search( $query_args, $request ) {
+    if ( reblock_is_restricted() && ! reblock_current_user_can_edit_content() && is_array( $query_args['post_type'] ?? null ) ) {
+        $query_args['post_type'] = array_values( array_diff( $query_args['post_type'], [ REBLOCK_POST_TYPE_NAME ] ) );
+
+        if ( empty( $query_args['post_type'] ) ) {
+            $query_args['post_type'] = 'no_reblock_results';
+        }
+    }
+
+    return $query_args;
+}
+
+add_filter( 'rest_post_search_query', __NAMESPACE__.'\\reblock_exclude_from_rest_search', 10, 2 );
+
+/**
+ * Excludes ReBlock posts from the core XML sitemaps when unlisted.
+ *
+ * @param array $post_types Post type objects keyed by name.
+ * @return array Modified post types.
+ */
+function reblock_exclude_from_sitemaps( $post_types ) {
+    if ( get_option( 'reblock_hash_slug_option', false ) ) {
+        unset( $post_types[ REBLOCK_POST_TYPE_NAME ] );
+    }
+
+    return $post_types;
+}
+
+add_filter( 'wp_sitemaps_post_types', __NAMESPACE__.'\\reblock_exclude_from_sitemaps' );
 ?>

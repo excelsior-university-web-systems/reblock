@@ -1,15 +1,20 @@
 <?php
 /**
- * Plugin Name: ReBlock
- * Plugin URI:  https://github.com/excelsior-university-web-systems/reblock
- * Description: ReBlock creates a centralized content hub to efficiently manage common reusable content blocks, ensuring consistency, quality, and accessibility.
- * Author:      Ethan Lin
- * Author URI:  https://profiles.wordpress.org/eslin87/
- * Version:     1.1.6
- * License:     GPLv2 or later
+ * Plugin Name:       ReBlock
+ * Plugin URI:        https://github.com/excelsior-university-web-systems/reblock
+ * Description:       ReBlock creates a centralized content hub to efficiently manage common reusable content blocks, ensuring consistency, quality, and accessibility.
+ * Author:            Ethan Lin
+ * Author URI:        https://profiles.wordpress.org/eslin87/
+ * Version:           1.1.7
+ * Requires at least: 7.0
+ * Requires PHP:      8.0
+ * License:           GPLv2 or later
  */
 
 if ( !defined( 'ABSPATH' ) ) { exit; }
+
+// is_plugin_active() is not loaded on front-end requests.
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 define( 'REBLOCK_PLUGIN_NAME', 'ReBlock' );
 define( 'REBLOCK_POST_TYPE_NAME', 'reblock' );

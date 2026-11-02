@@ -46,26 +46,42 @@ add_action( 'init', __NAMESPACE__.'\\reblock_register_block_type' );
 /**
  * Renders the content of a ReBlock block based on its attributes.
  *
+ * - Renders only ReBlock posts the current viewer is allowed to read.
  * - Outputs an iframe if `useIframe` is true.
  * - Otherwise, renders the post content directly.
- * - Optionally processes the content through `modify_reblock_content` if wrapped in Excelsior Bootstrap.
+ * - Skips ReBlock posts that are already being rendered to prevent circular references.
+ * - Processes the content through `modify_reblock_content` if wrapped in Excelsior Bootstrap within an Excelsior Bootstrap post.
  *
  * @param array $attributes Block attributes including `blockId`, `hasExcelsiorBootstrap`, and `useIframe`.
  * @return string The rendered HTML output or an empty string if invalid.
  */
 function reblock_content_renderer( $attributes ) {
-    
+
+    static $rendering = array();
+
     $block_id = isset( $attributes['blockId'] ) ? (int) $attributes['blockId'] : 0;
     $inside_excelsior_bootstrap = !empty( $attributes['hasExcelsiorBootstrap'] );
     $use_iframe = !empty( $attributes['useIframe'] );
-    
+
     if ( ! $block_id ) {
         return '';
     }
 
     $post = get_post( $block_id );
 
-    if ( $use_iframe && $post ) {
+    if ( ! $post || $post->post_type !== REBLOCK_POST_TYPE_NAME ) {
+        return '';
+    }
+
+    if ( 'publish' !== $post->post_status && ! current_user_can( 'read_post', $post->ID ) ) {
+        return '';
+    }
+
+    if ( post_password_required( $post ) && ! current_user_can( 'edit_post', $post->ID ) ) {
+        return '';
+    }
+
+    if ( $use_iframe ) {
         $permalink = get_permalink( $post );
         return sprintf(
             '<iframe data-reblock="%d" style="width: 100%%; height: auto; overflow: hidden; border: none;" scrolling="no" src="%s"></iframe>',
@@ -74,18 +90,19 @@ function reblock_content_renderer( $attributes ) {
         );
     }
 
-    if ( $post && $post->post_type === REBLOCK_POST_TYPE_NAME ) {
-
-        $content = apply_filters( 'the_content', $post->post_content );
-
-        if ( $inside_excelsior_bootstrap ) {
-            $content = modify_reblock_content( $content );
-        }
-
-        return $content;
+    if ( isset( $rendering[ $post->ID ] ) ) {
+        return '';
     }
 
-    return '';
+    $rendering[ $post->ID ] = true;
+    $content = apply_filters( 'the_content', $post->post_content );
+    unset( $rendering[ $post->ID ] );
+
+    if ( $inside_excelsior_bootstrap && EXCELSIOR_BOOTSTRAP_SUPPORT && get_post_type() === 'excelsior_bootstrap' ) {
+        $content = modify_reblock_content( $content );
+    }
+
+    return $content;
 }
 
 /**
@@ -100,7 +117,7 @@ function reblock_content_renderer( $attributes ) {
 function reblock_enqueue_block_editor_assets() {
     $screen = get_current_screen();
 
-    if ( $screen->post_type === REBLOCK_POST_TYPE_NAME ) {
+    if ( $screen && $screen->post_type === REBLOCK_POST_TYPE_NAME ) {
 
         if ( get_option( 'reblock_hash_slug_option', false ) ) {
             $css = '
@@ -146,7 +163,7 @@ add_filter( 'block_editor_settings_all', __NAMESPACE__.'\\reblock_inject_editor_
  * - Removes all HTML comment nodes.
  * - Extracts inner content from the `.page-container` inside `#excelsior-bootstrap`.
  * - Strips out the `#excelsior-bootstrap` wrapper and its children.
- * - Handles encoding to preserve special characters during processing.
+ * - Parses the content as UTF-8 inside a temporary root element to preserve special characters.
  *
  * @param string $content The original post content.
  * @return string The cleaned and modified HTML content.
@@ -157,21 +174,25 @@ function modify_reblock_content( $content ) {
     }
 
     $dom = new \DOMDocument( '1.0', 'UTF-8' );
-    libxml_use_internal_errors( true );
+    $use_internal_errors = libxml_use_internal_errors( true );
 
-    // Encode special characters as HTML entities to preserve them
-    $encodedContent = htmlentities( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-    $dom->loadHTML( $encodedContent, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+    $dom->loadHTML( '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><div id="reblock-content-root">' . $content . '</div></body></html>' );
     libxml_clear_errors();
+    libxml_use_internal_errors( $use_internal_errors );
 
     $xpath = new \DOMXPath( $dom );
+    $root = $xpath->query( '//div[@id="reblock-content-root"]' )->item( 0 );
+
+    if ( ! $root ) {
+        return $content;
+    }
 
     // Remove all comment nodes
     foreach ( $xpath->query( '//comment()' ) as $comment ) {
         $comment->parentNode->removeChild( $comment );
     }
 
-    $bootstrapContainer = $xpath->query( '//div[@id="excelsior-bootstrap"]' )->item( 0 );
+    $bootstrapContainer = $xpath->query( './/div[@id="excelsior-bootstrap"]', $root )->item( 0 );
 
     if ( $bootstrapContainer ) {
         $pageContainer = $xpath->query( './/div[contains(@class, "page-container")]', $bootstrapContainer )->item( 0 );
@@ -186,6 +207,12 @@ function modify_reblock_content( $content ) {
         $bootstrapContainer->parentNode->removeChild( $bootstrapContainer );
     }
 
-    return html_entity_decode( $dom->saveHTML(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+    $html = '';
+
+    foreach ( $root->childNodes as $child ) {
+        $html .= $dom->saveHTML( $child );
+    }
+
+    return $html;
 }
 ?>

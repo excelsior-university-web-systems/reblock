@@ -76,7 +76,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
             visited.add( currentId );
     
             try {
-                const post = await apiFetch( { path: `/wp/v2/reblock/${currentId}` } );
+                const post = await apiFetch( { path: `/wp/v2/reblock/${currentId}?context=edit` } );
     
                 const nestedMeta = post.meta?._reblock_used_in ?? [];
                 const nestedRefs = nestedMeta.filter( ref => ref.type === 'reblock' ).map( ref => ref.id );
@@ -96,7 +96,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
     const fetchPosts = debounce( async ( query ) => {
 
         const currentPostType = wp.data.select('core/editor').getCurrentPostType();
-        let searchPath = `/wp/v2/reblock?search=${query}&per_page=10&status=publish`;
+        let searchPath = `/wp/v2/reblock?search=${encodeURIComponent( query )}&per_page=10&status=publish`;
         
         if ( currentPostType === 'reblock' ) {
             const currentPostId = wp.data.select('core/editor').getCurrentPostId();
@@ -215,7 +215,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
 
     const checkForBootstrap = ( content ) => {
 
-        if ( hasExcelsiorBootstrapNamespace ) {
+        if ( hasExcelsiorBootstrapNamespace && isExcelsiorBootstrapPostType ) {
 
             const parser = new DOMParser();
             const doc = parser.parseFromString( content, 'text/html' );
@@ -270,7 +270,7 @@ export default function edit( { attributes, setAttributes, clientId } ) {
                     </ToolbarGroup>
                 <ToolbarGroup>
                     <ToolbarButton 
-                        href={'/wp-admin/post.php?post=' + post?.id + '&action=edit'}
+                        href={'post.php?post=' + post?.id + '&action=edit'}
                         target='_blank'
                         __next40pxDefaultSize
                         icon={pencil}

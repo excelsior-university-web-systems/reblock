@@ -29,10 +29,16 @@ domReady(() => {
 
     window.addEventListener("message", (event) => {
         const msg = event.data;
-        if (msg?.type !== "reblock" || !msg.id) return;
+        if (msg?.type !== "reblock") return;
 
-        const iframe = document.querySelector(`iframe[data-reblock='${msg.id}']`);
-        if (iframe) iframe.style.height = `${msg.height}px`;
+        const id = Number(msg.id);
+        const height = Number(msg.height);
+        if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(height) || height < 0) return;
+
+        // Only accept height updates from the iframe that sent the message.
+        const iframe = Array.from(document.querySelectorAll(`iframe[data-reblock='${id}']`))
+            .find((frame) => frame.contentWindow === event.source);
+        if (iframe) iframe.style.height = `${height}px`;
     });
 
     window.addEventListener("beforeunload", () => {

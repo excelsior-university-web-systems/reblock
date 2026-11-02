@@ -8,7 +8,7 @@ if ( !defined( 'ABSPATH' ) ) { exit; }
  *
  * - Stores an array of objects indicating where the ReBlock is used.
  * - Each object includes `id` and `type` to identify the referencing post.
- * - Exposes the meta field in the REST API with a defined schema for block editor use.
+ * - Exposes the meta field in the REST API `edit` context only, with a defined schema for block editor use.
  * - Defaults to an empty array if no references are found.
  *
  * @return void
@@ -19,8 +19,9 @@ function reblock_register_tracker_meta() {
         'type'         => 'array',
         'show_in_rest' => [
             'schema' => [
-                'type'  => 'array',
-                'items' => [
+                'type'    => 'array',
+                'context' => [ 'edit' ],
+                'items'   => [
                     'type'       => 'object',
                     'properties' => [
                         'id'   => [ 'type' => 'integer' ],
@@ -71,7 +72,8 @@ function reblock_extract_block_ids( $blocks ) {
 /**
  * Updates the reverse index for ReBlock usage when a post is saved.
  *
- * - Parses the post content to extract all referenced ReBlock IDs.
+ * - Applies to posts of any post type that contain ReBlock blocks.
+ * - Parses the post content to extract all referenced ReBlock IDs, ignoring IDs that are not ReBlock posts.
  * - Compares with previously stored references to detect additions/removals.
  * - Adds the current post to each referenced ReBlock’s `_reblock_used_in` list.
  * - Removes the post from any previously referenced ReBlocks that are no longer used.
@@ -89,7 +91,10 @@ function reblock_update_reverse_index( $post_id, $post, $update ) {
 
     // Parse the content and pull all ReBlock IDs (including nested)
     $all_blocks  = parse_blocks( $post->post_content );
-    $current_ids = array_unique( reblock_extract_block_ids( $all_blocks ) );
+    $current_ids = array_values( array_filter(
+        array_unique( reblock_extract_block_ids( $all_blocks ) ),
+        fn( $id ) => $id > 0 && get_post_type( $id ) === REBLOCK_POST_TYPE_NAME
+    ) );
 
     // Fetch previously stored references
     $old_ids = get_post_meta( $post_id, '_reblock_references', true );
@@ -148,7 +153,7 @@ add_action( 'save_post', __NAMESPACE__.'\\reblock_update_reverse_index', 10, 3 )
 /**
  * Cleans up the reverse index when a post is deleted.
  *
- * - Iterates over all ReBlock posts.
+ * - Iterates over the ReBlock posts referenced by the deleted post (`_reblock_references`).
  * - Removes the deleted post from each ReBlock’s `_reblock_used_in` metadata.
  * - Deletes the meta field entirely if no more references remain.
  *
@@ -156,13 +161,14 @@ add_action( 'save_post', __NAMESPACE__.'\\reblock_update_reverse_index', 10, 3 )
  * @return void
  */
 function reblock_cleanup_reverse_index( $post_id ) {
-    $all_reblocks = get_posts( [ 
-        'post_type'      => REBLOCK_POST_TYPE_NAME,
-        'posts_per_page' => -1,
-        'fields'         => 'ids',
-    ] );
+    $post_id = (int) $post_id;
+    $referenced_ids = get_post_meta( $post_id, '_reblock_references', true );
 
-    foreach ( $all_reblocks as $block_id ) {
+    if ( ! is_array( $referenced_ids ) ) {
+        return;
+    }
+
+    foreach ( array_map( 'intval', $referenced_ids ) as $block_id ) {
         $used_in = get_post_meta( $block_id, '_reblock_used_in', true );
         if ( is_array( $used_in ) ) {
             $filtered = array_filter( $used_in, fn( $e ) => intval( $e['id'] ) !== $post_id );
