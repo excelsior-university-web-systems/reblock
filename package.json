@@ -23,7 +23,8 @@
     "vendor/**",
     "includes/**",
     "build/**",
-    "reblock.php"
+    "reblock.php",
+    "uninstall.php"
   ],
   "keywords": [],
   "author": "",

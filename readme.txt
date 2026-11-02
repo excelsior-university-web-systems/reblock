@@ -51,8 +51,8 @@ This section describes how to install the plugin and get it working.
 * Fix ReBlock usage panel loading indefinitely when a ReBlock is used in a post type that is not available in the REST API.
 * Fix "Edit Original" link on sites installed in a subdirectory.
 * Improve performance of usage cleanup when deleting posts.
+* Remove ReBlock settings and role capabilities when the plugin is deleted. ReBlock posts and categories are kept.
 * Update development dependencies.
-
 
 = 1.1.6 (06/10/2026) =
 
